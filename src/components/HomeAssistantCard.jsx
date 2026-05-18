@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useHomeAssistant } from '../hooks/useHomeAssistant'
+import { IconThermometer, IconFire, IconRadio } from './icons'
 
 export default function HomeAssistantCard() {
   const ha = useHomeAssistant()
@@ -109,10 +110,9 @@ export default function HomeAssistantCard() {
   }
 
   const sections = [
-    { id: 'climate', label: '🌡 Climate' },
-    { id: 'lights',  label: '💡 Lights'  },
-    { id: 'power',   label: '🔋 Power'   },
-    { id: 'media',   label: '🎵 Media'   },
+    { id: 'climate', label: 'Climate', Icon: IconThermometer },
+    { id: 'lights',  label: 'Lights',  Icon: IconFire        },
+    { id: 'media',   label: 'Media',   Icon: IconRadio       },
   ]
 
   return (
@@ -166,22 +166,29 @@ export default function HomeAssistantCard() {
         borderBottom: '1px solid var(--border)',
         background: 'var(--bg-secondary)',
       }}>
-        {sections.map(s => (
-          <button
-            key={s.id}
-            onClick={() => setActiveSection(s.id)}
-            style={{
-              flex: 1, padding: '8px 4px', border: 'none',
-              borderBottom: `2px solid ${activeSection === s.id ? 'var(--accent)' : 'transparent'}`,
-              background: 'transparent',
-              color: activeSection === s.id ? 'var(--accent)' : 'var(--text-tertiary)',
-              fontSize: 10, fontFamily: 'var(--font-body)',
-              cursor: 'pointer', transition: 'color 0.2s',
-            }}
-          >
-            {s.label}
-          </button>
-        ))}
+        {sections.map(s => {
+          const active = activeSection === s.id
+          return (
+            <button
+              key={s.id}
+              onClick={() => setActiveSection(s.id)}
+              style={{
+                flex: 1, padding: '8px 4px', border: 'none',
+                borderBottom: `2px solid ${active ? 'var(--accent)' : 'transparent'}`,
+                background: 'transparent',
+                color: active ? 'var(--accent)' : 'var(--text-tertiary)',
+                fontSize: 9, fontFamily: 'var(--font-mono)', letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                cursor: 'pointer', transition: 'color 0.2s',
+                display: 'flex', flexDirection: 'column',
+                alignItems: 'center', gap: 3,
+              }}
+            >
+              <s.Icon style={{ width: 13, height: 13 }} />
+              {s.label}
+            </button>
+          )
+        })}
       </div>
 
       {/* Section content */}
@@ -215,17 +222,10 @@ export default function HomeAssistantCard() {
                 humId: 'sensor.refrigerator_humidity',
                 powerId: 'binary_sensor.refrigerator_power',
               },
-              {
-                label: 'Weather Station',
-                tempId: 'sensor.chomp_weather_station_outside_temperature',
-                humId: null,
-                pressId: 'sensor.chomp_weather_station_outside_pressure',
-              },
             ].map(zone => {
               const temp  = ha.getState(zone.tempId)
               const hum   = zone.humId ? ha.getState(zone.humId) : null
               const power = zone.powerId ? ha.isOn(zone.powerId) : null
-              const press = zone.pressId ? ha.getState(zone.pressId) : null
 
               if (!temp && !hum) return null
 
@@ -265,11 +265,7 @@ export default function HomeAssistantCard() {
                         <span style={{ fontSize: 10, color: 'var(--text-tertiary)', marginLeft: 2 }}>RH</span>
                       </div>
                     )}
-                    {press && (
-                      <div style={{ fontSize: 11, color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
-                        {parseFloat(press).toFixed(0)} hPa
-                      </div>
-                    )}
+
                     <div style={{ fontSize: 10, color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
                       {ha.entities[zone.tempId]?.attributes?.unit_of_measurement || '°F'}
                     </div>
@@ -326,99 +322,6 @@ export default function HomeAssistantCard() {
                       {light.label}
                     </div>
                   </button>
-                )
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* ── POWER ── */}
-        {activeSection === 'power' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {/* Battery level */}
-            <div style={{
-              background: 'var(--bg-secondary)', border: '1px solid var(--border)',
-              borderRadius: 10, padding: '10px 12px',
-            }}>
-              <div style={{
-                fontSize: 10, fontFamily: 'var(--font-mono)',
-                color: 'var(--text-tertiary)', textTransform: 'uppercase',
-                letterSpacing: '0.08em', marginBottom: 6,
-              }}>
-                Chomp Battery (via HA)
-              </div>
-              <div style={{
-                fontSize: 28, fontWeight: 700,
-                color: 'var(--text-primary)', fontFamily: 'var(--font-body)',
-                lineHeight: 1, marginBottom: 6,
-              }}>
-                {ha.getState('sensor.chomp_battery_battery_level') ?? '—'}%
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
-                {ha.getState('sensor.chomp_battery_status') ?? ''}
-              </div>
-            </div>
-
-            {/* Power flows */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-              {[
-                { label: 'AC In',   id: 'sensor.chomp_battery_ac_in_power',     unit: 'W', color: 'var(--safe)'   },
-                { label: 'AC Out',  id: 'sensor.chomp_battery_ac_out_power',    unit: 'W', color: 'var(--accent)' },
-                { label: 'DC Out',  id: 'sensor.chomp_battery_dc_out_power',    unit: 'W', color: 'var(--accent)' },
-                { label: 'Solar In', id: 'sensor.chomp_battery_solar_1_in_power', unit: 'W', color: '#FBBF24'      },
-              ].map(sensor => (
-                <div key={sensor.id} style={{
-                  background: 'var(--bg-secondary)', border: '1px solid var(--border)',
-                  borderRadius: 8, padding: '8px 10px',
-                }}>
-                  <div style={{
-                    fontSize: 9, fontFamily: 'var(--font-mono)',
-                    color: 'var(--text-tertiary)', textTransform: 'uppercase',
-                    letterSpacing: '0.06em', marginBottom: 3,
-                  }}>
-                    {sensor.label}
-                  </div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: sensor.color, fontFamily: 'var(--font-body)' }}>
-                    {ha.getState(sensor.id) ?? '—'}
-                    <span style={{ fontSize: 10, color: 'var(--text-tertiary)', marginLeft: 2 }}>{sensor.unit}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Output switches */}
-            <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
-              {[
-                { id: 'switch.chomp_battery_ac_enabled',    label: 'AC Output'    },
-                { id: 'switch.chomp_battery_dc_12v_enabled', label: '12V DC Output' },
-                { id: 'switch.chomp_battery_usb_enabled',   label: 'USB Output'   },
-                { id: 'switch.chomp_battery_beeper',        label: 'Beeper'       },
-              ].map((sw, i, arr) => {
-                const on = ha.isOn(sw.id)
-                return (
-                  <div key={sw.id} style={{
-                    padding: '10px 12px',
-                    borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none',
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  }}>
-                    <div style={{ fontSize: 13, color: 'var(--text-primary)', fontFamily: 'var(--font-body)' }}>
-                      {sw.label}
-                    </div>
-                    <div
-                      onClick={() => ha.toggle(sw.id)}
-                      style={{
-                        width: 36, height: 20, borderRadius: 10,
-                        background: on ? 'var(--accent)' : 'var(--border)',
-                        position: 'relative', cursor: 'pointer', transition: 'background 0.2s',
-                      }}
-                    >
-                      <div style={{
-                        position: 'absolute', top: 2, left: on ? 18 : 2,
-                        width: 16, height: 16, borderRadius: '50%',
-                        background: '#fff', transition: 'left 0.2s',
-                      }} />
-                    </div>
-                  </div>
                 )
               })}
             </div>

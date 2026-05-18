@@ -5,11 +5,11 @@ import { useFleet } from '../hooks/useFleet'
 import { supabase } from '../lib/supabase'
 import { useEcoFlow } from '../hooks/useEcoFlow'
 import { ECOFLOW_DEVICES } from '../config/devices'
-import { useStarlink } from '../hooks/useStarlink'
 import { StatusBadge } from '../components/StatusBadge'
 import { Skeleton } from '../components/Skeleton'
 import { GpsStatus } from '../components/GpsStatus'
 import HomeAssistantCard from '../components/HomeAssistantCard'
+import { CommunicationsSection } from './CommunicationsSection'
 
 // ─── Seed data ────────────────────────────────────────────────────────────────
 
@@ -180,7 +180,7 @@ export default function RigPage() {
       <div style={{ flex: 1, overflowY: 'auto' }}>
         <div className="p-4 flex flex-col gap-5" style={{ paddingBottom: 'calc(24px + env(safe-area-inset-bottom))' }}>
           {activeIntegration === 'ecoflow' && <EcoflowSection onShowInfo={setEcoInfo} />}
-          {activeIntegration === 'starlink' && <StarlinkSection />}
+          {activeIntegration === 'starlink' && <CommunicationsSection />}
           {activeIntegration === 'home_assistant' && (
             <HomeAssistantCard />
           )}
@@ -835,113 +835,7 @@ function EcoflowSection({ onShowInfo }) {
 // ─── Starlink ─────────────────────────────────────────────────────────────────
 
 function StarlinkSection() {
-  const {
-    status, loading, isOnline, isSearching,
-    downMbps, upMbps, latencyMs, obstructionPct,
-    lastUpdated, refetch,
-  } = useStarlink()
-
-  const dotColor = isOnline ? '#22c55e' : isSearching ? '#f97316' : '#ef4444'
-  const statusLabel = isOnline ? 'Connected'
-    : isSearching ? 'Searching...'
-    : status?.offline ? 'Dish offline'
-    : loading ? 'Connecting...'
-    : 'Not connected'
-
-  return (
-    <div>
-      <SectionLabel>Starlink</SectionLabel>
-      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-4 flex flex-col gap-3">
-
-        {/* Header row */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {/* Status dot */}
-            <div style={{ position: 'relative', width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              {isOnline && (
-                <div style={{ position: 'absolute', width: 24, height: 24, borderRadius: '50%', background: '#22c55e', opacity: 0.2, animation: 'gps-pulse 2s ease-out infinite' }} />
-              )}
-              {isOnline && (
-                <div style={{ position: 'absolute', width: 16, height: 16, borderRadius: '50%', background: '#22c55e', opacity: 0.3, animation: 'gps-pulse 2s ease-out infinite', animationDelay: '0.4s' }} />
-              )}
-              <div style={{ width: 10, height: 10, borderRadius: '50%', background: dotColor, position: 'relative', zIndex: 1, boxShadow: isOnline ? '0 0 6px #22c55e' : 'none' }} />
-            </div>
-
-            <div>
-              <div className="text-[var(--text-primary)]" style={{ fontSize: 14, fontWeight: 500, lineHeight: 1.2 }}>{statusLabel}</div>
-              <div className="text-[var(--text-secondary)]" style={{ fontSize: 11, lineHeight: 1.2, marginTop: 2 }}>Starlink · Flat High Performance</div>
-            </div>
-          </div>
-
-          <button
-            onClick={refetch}
-            className="w-7 h-7 flex items-center justify-center rounded-lg text-[var(--text-secondary)] hover:text-white transition-colors"
-            style={{ background: 'var(--bg-secondary)' }}
-            aria-label="Refresh"
-          >
-            <IconRefresh style={{ width: 14, height: 14 }} />
-          </button>
-        </div>
-
-        {/* Speed stats — online only */}
-        {isOnline && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 6 }}>
-            <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg p-2 flex flex-col items-center gap-0.5">
-              <span className="text-xs font-bold text-[var(--text-primary)] tabular-nums">{downMbps}</span>
-              <span className="text-[9px] text-[var(--text-secondary)] uppercase tracking-wider">↓ Mbps</span>
-            </div>
-            <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg p-2 flex flex-col items-center gap-0.5">
-              <span className="text-xs font-bold text-[var(--text-primary)] tabular-nums">{upMbps}</span>
-              <span className="text-[9px] text-[var(--text-secondary)] uppercase tracking-wider">↑ Mbps</span>
-            </div>
-            <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg p-2 flex flex-col items-center gap-0.5">
-              <span className="text-xs font-bold text-[var(--text-primary)] tabular-nums">{latencyMs}ms</span>
-              <span className="text-[9px] text-[var(--text-secondary)] uppercase tracking-wider">Latency</span>
-            </div>
-            <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg p-2 flex flex-col items-center gap-0.5">
-              <span
-                className="text-xs font-bold tabular-nums"
-                style={{ color: parseFloat(obstructionPct) > 5 ? '#ef4444' : '#22c55e' }}
-              >
-                {obstructionPct}%
-              </span>
-              <span className="text-[9px] text-[var(--text-secondary)] uppercase tracking-wider">Obstruct</span>
-            </div>
-          </div>
-        )}
-
-        {/* Alerts */}
-        {status?.alerts?.thermalThrottle && (
-          <div className="rounded-r-lg px-3 py-2" style={{ background: 'rgba(249,115,22,0.1)', borderLeft: '2px solid #f97316' }}>
-            <p className="text-xs font-medium" style={{ color: '#f97316' }}>Thermal throttling active</p>
-          </div>
-        )}
-        {status?.alerts?.motorsStuck && (
-          <div className="rounded-r-lg px-3 py-2" style={{ background: 'rgba(239,68,68,0.1)', borderLeft: '2px solid #ef4444' }}>
-            <p className="text-xs font-medium" style={{ color: '#ef4444' }}>Motors stuck — check dish position</p>
-          </div>
-        )}
-
-        {/* Offline message */}
-        {!loading && (status?.offline || (!isOnline && !isSearching)) && (
-          <div className="flex flex-col items-center gap-1 py-3">
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-[#ef4444]" />
-              <p className="text-[var(--text-secondary)] text-sm font-medium">Dish not reachable</p>
-            </div>
-            <p className="text-[var(--text-tertiary)] text-xs">Connect to Starlink network to monitor</p>
-          </div>
-        )}
-
-        {/* Last updated */}
-        {lastUpdated && (
-          <p className="text-[10px] text-[var(--text-tertiary)] text-right -mt-1">
-            Updated {lastUpdated.toLocaleTimeString()}
-          </p>
-        )}
-      </div>
-    </div>
-  )
+  return null
 }
 
 // ─── Humidity ─────────────────────────────────────────────────────────────────

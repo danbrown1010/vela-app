@@ -56,6 +56,7 @@ import PlugZap       from 'lucide-react/dist/esm/icons/plug-zap.mjs'
 import Usb           from 'lucide-react/dist/esm/icons/usb.mjs'
 import Car           from 'lucide-react/dist/esm/icons/car.mjs'
 import Camera        from 'lucide-react/dist/esm/icons/camera.mjs'
+import Radio         from 'lucide-react/dist/esm/icons/radio.mjs'
 
 const W = 1.75
 
@@ -123,3 +124,4 @@ export const IconCloudSnow   = (p) => <CloudSnow   strokeWidth={W} {...p} />
 export const IconWind        = (p) => <Wind        strokeWidth={W} {...p} />
 export const IconThermometer = (p) => <Thermometer strokeWidth={W} {...p} />
 export const IconDroplets    = (p) => <Droplets    strokeWidth={W} {...p} />
+export const IconRadio       = (p) => <Radio       strokeWidth={W} {...p} />
