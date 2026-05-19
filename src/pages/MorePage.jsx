@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { StatusBadge } from '../components/StatusBadge'
 import { useAppStore } from '../store/index'
 import { UserAvatar } from '../components/UserAvatar'
 import { CollapsingHeader } from '../components/CollapsingHeader'
@@ -16,7 +15,7 @@ const SECTIONS = [
     items: [
       { id: 'fleet',  title: 'Fleet',    sub: 'Vehicles · maintenance · build sheet', Icon: IconSignal },
       { id: 'crew',   title: 'My Crew',  sub: 'Invite copilots and observers',        Icon: IconPeople },
-      { id: 'badges', title: 'Badges',   sub: 'Your trail record',                    Icon: IconStar   },
+      { id: 'badges', title: 'Badges',   sub: 'Your trail record',                    Icon: IconStar,   soon: true },
     ],
   },
   {
@@ -24,15 +23,15 @@ const SECTIONS = [
     items: [
       { id: 'survival',  title: 'Survival Agent', sub: 'AI wilderness expert', Icon: IconShield, pro: true },
       { id: 'knowledge', title: 'Knowledge Base', sub: 'Manuals, RAG search',  Icon: IconBook,   pro: true },
-      { id: 'campbot',   title: 'Campsite Bot',   sub: 'Availability alerts',  Icon: IconBell,   pro: true },
+      { id: 'campbot',   title: 'Campsite Bot',   sub: 'Availability alerts',  Icon: IconBell,   pro: true, soon: true },
     ],
   },
   {
     label: 'Gear & Prep',
     items: [
-      { id: 'glove-box',   title: 'Glove Box',         sub: 'Permits · reservations · insurance', Icon: IconFolder   },
+      { id: 'glove-box',   title: 'Glove Box',         sub: 'Permits · reservations · insurance', Icon: IconFolder,   pro: true },
       { id: 'gear',        title: 'Gear & Packing',   sub: 'Checklists, fish & game',            Icon: IconBackpack },
-      { id: 'meals',       title: 'Meal Planning',    sub: 'AI off-grid meals',                  Icon: IconUtensils },
+      { id: 'meals',       title: 'Meal Planning',    sub: 'AI off-grid meals',                  Icon: IconUtensils, pro: true },
       { id: 'pets',        title: 'Pets',             sub: 'Care, food, vets',                   Icon: IconPaw      },
     ],
   },
@@ -86,6 +85,7 @@ export default function MorePage({ onNavigate }) {
                 sub={item.sub}
                 Icon={item.Icon}
                 pro={item.pro}
+                soon={item.soon}
                 onTap={() => onNavigate && onNavigate(item.id)}
               />
             ))}
@@ -124,13 +124,41 @@ function Section({ label, children }) {
   )
 }
 
-function ItemRow({ title, sub, Icon, pro, onTap }) {
+function ProEarmark() {
+  const { accent } = useAppStore()
+  return (
+    <div
+      aria-label="PRO feature"
+      style={{
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        width: 24,
+        height: 24,
+        pointerEvents: 'none',
+        opacity: 0.5,
+      }}
+    >
+      <svg
+        viewBox="0 0 24 24"
+        width="24"
+        height="24"
+        style={{ display: 'block' }}
+      >
+        <polygon points="24,0 24,24 0,0" fill={accent} />
+      </svg>
+    </div>
+  )
+}
+
+function ItemRow({ title, sub, Icon, pro, soon, onTap }) {
   return (
     <button
       onClick={onTap}
       className="w-full text-left active:opacity-70 transition-opacity"
-      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderBottom: '1px solid var(--border)' }}
+      style={{ position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderBottom: '1px solid var(--border)' }}
     >
+      {pro && <ProEarmark />}
       <div style={{ width: 32, height: 32, borderRadius: 10, background: 'var(--bg-secondary)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
         <Icon style={{ width: 18, height: 18, color: 'var(--text-secondary)' }} />
       </div>
@@ -138,11 +166,10 @@ function ItemRow({ title, sub, Icon, pro, onTap }) {
         <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}>{title}</p>
         <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{sub}</p>
       </div>
-      {pro ? (
-        <StatusBadge status="advisory" label="PRO" dot={false} />
-      ) : (
-        <IconChevronRight style={{ width: 16, height: 16, color: 'var(--text-tertiary)', flexShrink: 0 }} />
+      {soon && (
+        <span style={{ fontSize: 10, fontWeight: 600, fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)', border: '1px solid var(--border)', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.06em', flexShrink: 0 }}>SOON</span>
       )}
+      <IconChevronRight style={{ width: 16, height: 16, color: 'var(--text-tertiary)', flexShrink: 0 }} />
     </button>
   )
 }

@@ -42,14 +42,33 @@ export function CollapsingHeader({
 
   useEffect(() => {
     if (scrollProgressProp !== undefined) return
+    let rafId = null
+    let mounted = true
+
     const onScroll = () => {
-      const y = window.scrollY
-      const next = Math.min(1, Math.max(0, y / TRANSITION_PX))
-      setScrollProgressState(next)
+      if (!mounted) return
+      if (rafId) return
+      rafId = requestAnimationFrame(() => {
+        rafId = null
+        if (!mounted) return
+        const y = window.scrollY || 0
+        const next = Math.min(1, Math.max(0, y / TRANSITION_PX))
+        setScrollProgressState(next)
+      })
     }
+
     window.addEventListener('scroll', onScroll, { passive: true })
-    onScroll()
-    return () => window.removeEventListener('scroll', onScroll)
+
+    // Defer initial read until after first paint — avoids reading a stale
+    // scrollY before page content has laid out.
+    const initialReadId = requestAnimationFrame(() => onScroll())
+
+    return () => {
+      mounted = false
+      window.removeEventListener('scroll', onScroll)
+      if (rafId) cancelAnimationFrame(rafId)
+      cancelAnimationFrame(initialReadId)
+    }
   }, [scrollProgressProp])
 
   const scrollProgress = scrollProgressProp !== undefined ? scrollProgressProp : scrollProgressState
@@ -90,9 +109,17 @@ export function CollapsingHeader({
   return (
     <div
       style={{
-        position: 'sticky', top: 0, zIndex: 100,
+        position: 'sticky',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 100,
         background: 'var(--bg-primary)',
         paddingTop: 'env(safe-area-inset-top)',
+        // Force a containing block to stabilize sticky on iOS Safari
+        willChange: 'transform',
+        // Don't let an upstream ancestor's transform collapse this element
+        isolation: 'isolate',
       }}
     >
       {/* Top row */}
