@@ -1,6 +1,5 @@
 import { useCommunications } from '../hooks/useCommunications'
 import { useAppStore } from '../store/index'
-import { IconRefresh } from '../components/icons'
 
 export function CommunicationsSection() {
   const { accent } = useAppStore()
@@ -63,26 +62,15 @@ export function CommunicationsSection() {
           }}>
             Chomp Wifi {wifiOn ? 'online' : 'offline'}
           </div>
-          <div style={{
-            fontSize: 11, color: 'var(--text-tertiary)',
-            fontFamily: 'var(--font-mono)', marginTop: 2,
-          }}>
-            {lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString()}` : ''}
-            {uptimeIso ? ` · up ${formatUptime(uptimeIso)}` : ''}
-          </div>
+          {uptimeIso && (
+            <div style={{
+              fontSize: 11, color: 'var(--text-tertiary)',
+              fontFamily: 'var(--font-mono)', marginTop: 2,
+            }}>
+              up {formatUptime(uptimeIso)}
+            </div>
+          )}
         </div>
-        <button
-          onClick={refetch}
-          aria-label="Refresh"
-          style={{
-            width: 32, height: 32, borderRadius: 8,
-            border: '1px solid var(--border)', background: 'transparent',
-            cursor: 'pointer', display: 'flex',
-            alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-          }}
-        >
-          <IconRefresh style={{ width: 14, height: 14, color: 'var(--text-secondary)' }} />
-        </button>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 14 }}>
@@ -111,10 +99,22 @@ export function CommunicationsSection() {
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 8 }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
         <LinkButton href={slateAdminUrl} label="Slate AX admin" />
         <LinkButton href={starlinkAppUrl} label="Starlink app" />
       </div>
+
+      {lastUpdated && (
+        <div style={{
+          paddingTop: 10, borderTop: '1px solid var(--border)',
+          fontSize: 10, fontFamily: 'var(--font-mono)',
+          color: 'var(--text-tertiary)',
+          display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8,
+        }}>
+          <span>Updated {lastUpdated.toLocaleTimeString()}</span>
+          <button onClick={refetch} aria-label="Refresh" style={footerRefreshStyle}>↺</button>
+        </div>
+      )}
     </Card>
   )
 }
@@ -162,18 +162,7 @@ function Status({ dot, label, sub, onRefresh }) {
         )}
       </div>
       {onRefresh && (
-        <button
-          onClick={onRefresh}
-          aria-label="Retry"
-          style={{
-            width: 32, height: 32, borderRadius: 8,
-            border: '1px solid var(--border)', background: 'transparent',
-            cursor: 'pointer', display: 'flex',
-            alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-          }}
-        >
-          <IconRefresh style={{ width: 14, height: 14, color: 'var(--text-secondary)' }} />
-        </button>
+        <button onClick={onRefresh} aria-label="Retry" style={footerRefreshStyle}>↺</button>
       )}
     </div>
   )
@@ -250,6 +239,13 @@ function LinkButton({ href, label }) {
       {label} ↗
     </a>
   )
+}
+
+const footerRefreshStyle = {
+  width: 22, height: 22, borderRadius: 5,
+  border: '1px solid var(--border)', background: 'transparent',
+  color: 'var(--text-tertiary)', fontSize: 11,
+  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
 }
 
 function formatUptime(iso) {

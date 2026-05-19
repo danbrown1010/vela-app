@@ -445,8 +445,27 @@ export default function HomeAssistantCard() {
         )}
 
       </div>
+
+      {ha.lastUpdated && (
+        <div style={{
+          padding: '6px 14px', borderTop: '1px solid var(--border)',
+          fontSize: 10, fontFamily: 'var(--font-mono)',
+          color: 'var(--text-tertiary)',
+          display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8,
+        }}>
+          <span>Updated {ha.lastUpdated.toLocaleTimeString()}</span>
+          <button onClick={ha.reload} aria-label="Refresh" style={footerRefreshStyle}>↺</button>
+        </div>
+      )}
     </div>
   )
+}
+
+const footerRefreshStyle = {
+  width: 22, height: 22, borderRadius: 5,
+  border: '1px solid var(--border)', background: 'transparent',
+  color: 'var(--text-tertiary)', fontSize: 11,
+  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
 }
 
 function BatteryIcon({ soc }) {

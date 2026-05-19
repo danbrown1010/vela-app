@@ -135,9 +135,16 @@ export function EcoflowDeviceCard({ device, onShowInfo }) {
       {lastUpdated && (
         <div style={{
           fontSize: 10, fontFamily: 'var(--font-mono)',
-          color: 'var(--text-tertiary)', marginTop: 6, textAlign: 'right',
+          color: 'var(--text-tertiary)', marginTop: 6,
+          display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8,
         }}>
-          Updated {lastUpdated.toLocaleTimeString()}
+          <span>Updated {lastUpdated.toLocaleTimeString()}</span>
+          <button onClick={refetch} aria-label="Refresh" style={{
+            width: 22, height: 22, borderRadius: 5,
+            border: '1px solid var(--border)', background: 'transparent',
+            color: 'var(--text-tertiary)', fontSize: 11,
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>↺</button>
         </div>
       )}
     </div>

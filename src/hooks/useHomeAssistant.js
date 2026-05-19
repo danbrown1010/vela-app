@@ -9,6 +9,7 @@ export function useHomeAssistant() {
   const [connected, setConnected] = useState(false)
   const [connecting, setConnecting] = useState(true)
   const [entities, setEntities] = useState({})
+  const [lastUpdated, setLastUpdated] = useState(null)
   const [token, setToken] = useState(
     localStorage.getItem('vela-ha-token') ?? ''
   )
@@ -83,6 +84,7 @@ export function useHomeAssistant() {
         .forEach(e => { filtered[e.entity_id] = e })
 
       setEntities(filtered)
+      setLastUpdated(new Date())
     } catch (err) {
       console.error('HA entity load error:', err)
     }
@@ -197,6 +199,7 @@ export function useHomeAssistant() {
     getState,
     getAttr,
     isOn,
+    lastUpdated,
     reload: loadEntities,
     HA_URL,
   }
