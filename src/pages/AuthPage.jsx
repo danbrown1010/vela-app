@@ -3,11 +3,11 @@ import RotatingBackground from '../components/RotatingBackground'
 
 const OVERLAY = `linear-gradient(
   to bottom,
-  rgba(28,33,23,0.15) 0%,
-  rgba(28,33,23,0.25) 30%,
-  rgba(28,33,23,0.70) 60%,
-  rgba(28,33,23,0.93) 80%,
-  rgba(28,33,23,0.98) 100%
+  rgba(26,29,34,0.15) 0%,
+  rgba(26,29,34,0.25) 30%,
+  rgba(26,29,34,0.70) 60%,
+  rgba(26,29,34,0.93) 80%,
+  rgba(26,29,34,0.98) 100%
 )`
 
 export default function AuthPage({ onSignIn, notAllowed = false }) {
