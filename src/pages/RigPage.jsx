@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { IconRefresh } from '../components/icons'
 import { useAppStore } from '../store/index'
+import { CollapsingHeader } from '../components/CollapsingHeader'
 import { useFleet } from '../hooks/useFleet'
 import { supabase } from '../lib/supabase'
 import { StatusBadge } from '../components/StatusBadge'
@@ -116,138 +117,45 @@ export default function RigPage() {
     setSP(Math.min(1, Math.max(0, y / 80)))
   }, [])
 
-  const lerp = (a, b, t) => a + (b - a) * t
-  const photoSize        = lerp(56, 32, scrollProgress)
-  const titleSize        = lerp(26, 18, scrollProgress)
-  const subtitleOpacity  = Math.max(0, 1 - scrollProgress * 1.8)
-  const gpsLineOpacity   = Math.max(0, 1 - scrollProgress * 1.8)
-  const inlineGpsOpacity = scrollProgress > 0.6 ? (scrollProgress - 0.6) / 0.4 : 0
-  const headerPaddingY   = lerp(14, 8, scrollProgress)
-
-  // GPS label / color (mirrors GpsStatus component logic)
-  const gpsColor = { locked: 'var(--safe)', requesting: 'var(--accent)', unavailable: 'var(--accent)', denied: 'var(--danger)', 'ip-based': 'var(--text-tertiary)' }[gpsStatus] ?? 'var(--text-tertiary)'
-  const gpsFull  = gpsStatus === 'locked'   ? `GPS LOCKED · ±${Math.round(location?.accuracy ?? 0)}M`
-                 : gpsStatus === 'ip-based' ? `${location?.city ?? 'LOCATION'} · IP APPROXIMATE`
-                 : (gpsStatus ?? '').toUpperCase().replace(/-/g, ' ')
-  const gpsShort = gpsStatus === 'locked'   ? `±${Math.round(location?.accuracy ?? 0)}m`
-                 : gpsStatus === 'ip-based' ? (location?.city ?? 'IP')
-                 : gpsFull
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
 
       {/* Collapsing vehicle header + sticky tab chips */}
       {primaryVehicle && (
-        <div style={{ background: 'var(--bg-primary)', flexShrink: 0 }}>
-
-          {/* Top row — photo · name · primary pill */}
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 12,
-            padding: `${headerPaddingY}px 16px ${lerp(8, 4, scrollProgress)}px`,
-            paddingRight: 48,
-          }}>
-            {/* Photo / SVG placeholder */}
-            <div style={{
-              width: photoSize, height: photoSize, borderRadius: 8,
-              background: 'var(--bg-secondary)', border: '1px solid var(--border)',
-              overflow: 'hidden', flexShrink: 0,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              {primaryVehicle.photo_url ? (
-                <img src={primaryVehicle.photo_url} alt={primaryVehicle.nickname}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              ) : (
-                <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)"
-                  strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
-                  style={{ width: lerp(20, 13, scrollProgress), height: lerp(20, 13, scrollProgress) }}>
-                  <rect x="1" y="3" width="15" height="13" rx="2"/>
-                  <path d="M16 8h4l3 3v5h-7V8z"/>
-                  <circle cx="5.5" cy="18.5" r="2.5"/>
-                  <circle cx="18.5" cy="18.5" r="2.5"/>
-                </svg>
-              )}
-            </div>
-
-            {/* Name + subtitle + inline GPS on collapse */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, minWidth: 0 }}>
+        <CollapsingHeader
+          image={primaryVehicle.photo_url
+            ? { src: primaryVehicle.photo_url, alt: primaryVehicle.nickname, shape: 'square' }
+            : { node: (
                 <div style={{
-                  fontSize: titleSize, fontWeight: 700, lineHeight: 1,
-                  color: 'var(--text-primary)', fontFamily: 'var(--font-body)',
-                  textTransform: 'uppercase', flexShrink: 0,
-                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  width: '100%', height: '100%', borderRadius: 8,
+                  background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
-                  {primaryVehicle.nickname || primaryVehicle.make}
+                  <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)"
+                    strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
+                    style={{ width: 22, height: 22 }}>
+                    <rect x="1" y="3" width="15" height="13" rx="2"/>
+                    <path d="M16 8h4l3 3v5h-7V8z"/>
+                    <circle cx="5.5" cy="18.5" r="2.5"/>
+                    <circle cx="18.5" cy="18.5" r="2.5"/>
+                  </svg>
                 </div>
-                {/* Inline GPS chip — fades in as header collapses */}
-                {inlineGpsOpacity > 0 && (
-                  <span style={{
-                    opacity: inlineGpsOpacity,
-                    display: 'inline-flex', alignItems: 'center', gap: 4,
-                    fontSize: 10, fontFamily: 'var(--font-mono)',
-                    color: gpsColor, letterSpacing: '0.06em', flexShrink: 0,
-                  }}>
-                    <span style={{ width: 5, height: 5, borderRadius: '50%', background: gpsColor, flexShrink: 0 }} />
-                    {gpsShort}
-                  </span>
-                )}
-              </div>
-
-              {/* Vehicle subtitle — fades and collapses */}
-              <div style={{
-                fontSize: 11, color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)',
-                marginTop: subtitleOpacity > 0 ? 3 : 0,
-                opacity: subtitleOpacity,
-                maxHeight: subtitleOpacity > 0 ? 20 : 0,
-                overflow: 'hidden',
-                whiteSpace: 'nowrap', textOverflow: 'ellipsis',
-              }}>
-                {[primaryVehicle.year, primaryVehicle.make, primaryVehicle.model, primaryVehicle.trim].filter(Boolean).join(' ')}
-              </div>
-            </div>
-
-            {/* PRIMARY pill */}
-            <div style={{
-              fontSize: 9, fontFamily: 'var(--font-mono)', fontWeight: 700,
-              color: accent, border: `1px solid ${accent}`,
-              borderRadius: 8, padding: '2px 6px', letterSpacing: '0.06em',
-              flexShrink: 0,
-              transform: `scale(${lerp(1, 0.85, scrollProgress)})`,
-              transformOrigin: 'right center',
-            }}>
-              PRIMARY
-            </div>
-          </div>
-
-          {/* GPS status line — collapses in height */}
-          <div style={{
-            padding: '0 16px',
-            maxHeight: gpsLineOpacity > 0 ? 24 : 0,
-            opacity: gpsLineOpacity,
-            overflow: 'hidden',
-          }}>
-            <div style={{
-              fontSize: 11, fontFamily: 'var(--font-mono)',
-              color: gpsColor, letterSpacing: '0.06em',
-              display: 'flex', alignItems: 'center', gap: 5,
-              marginBottom: 6,
-            }}>
-              <div style={{
-                width: 6, height: 6, borderRadius: '50%', background: gpsColor, flexShrink: 0,
-                animation: gpsStatus !== 'locked' ? 'pulse 1.5s ease-in-out infinite' : 'none',
-              }} />
-              {gpsFull}
-            </div>
-          </div>
-
-          {/* Tab chips — always visible */}
-          <div style={{
-            display: 'flex', gap: 8,
-            padding: `${lerp(10, 8, scrollProgress)}px 16px ${lerp(12, 8, scrollProgress)}px`,
-            borderBottom: scrollProgress > 0.5 ? '1px solid var(--border)' : '1px solid transparent',
-            overflowX: 'auto', scrollbarWidth: 'none',
-            transition: 'border-color 0.15s',
-          }}>
+              )
+            }
+          }
+          title={primaryVehicle.nickname || primaryVehicle.make}
+          subtitle={[primaryVehicle.year, primaryVehicle.make, primaryVehicle.model, primaryVehicle.trim].filter(Boolean).join(' ')}
+          uppercaseTitle={true}
+          badge={{ label: 'PRIMARY', tone: 'accent' }}
+          gps={{
+            state: gpsStatus === 'locked' ? 'locked'
+                 : (gpsStatus === 'requesting' || gpsStatus === 'ip-based') ? 'searching'
+                 : 'off',
+            accuracyM: Math.round(location?.accuracy ?? 0),
+          }}
+          scrollProgress={scrollProgress}
+        >
+          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', scrollbarWidth: 'none' }}>
             {[
               { key: 'ecoflow',        label: 'Power'          },
               { key: 'starlink',       label: 'Communications' },
@@ -276,7 +184,7 @@ export default function RigPage() {
               )
             })}
           </div>
-        </div>
+        </CollapsingHeader>
       )}
 
       {/* Telemetry panel — driven by active integration */}
