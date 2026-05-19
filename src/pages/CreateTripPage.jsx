@@ -4,6 +4,10 @@ import { getDisplayName, getInitials } from '../utils/userHelpers'
 import { TypeSelector, TypeBadge } from '../components/TripTypeIcons'
 import { IconChevronLeft, IconCheck, IconPlus, IconSignal } from '../components/icons'
 
+function toLocalISODate(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 const STEP_LABELS = ['Basics', 'Rig', 'People', 'Review']
 
 const PREPARE_ITEMS = [
@@ -30,7 +34,7 @@ export default function CreateTripPage({ onClose, onCreated }) {
   const [step, setStep]       = useState(1)
   const [form, setForm]       = useState(() => ({
     ...INITIAL_FORM,
-    departureDate: new Date().toISOString().slice(0, 10),
+    departureDate: toLocalISODate(new Date()),
   }))
   const [creating, setCreating] = useState(false)
   const [error, setError]     = useState(null)
@@ -50,7 +54,7 @@ export default function CreateTripPage({ onClose, onCreated }) {
         name:          form.name || 'New Trip',
         type:          form.types[0] ?? 'Overlanding',
         types:         form.types,
-        departureDate: form.departureDate || new Date().toISOString().slice(0, 10),
+        departureDate: form.departureDate || toLocalISODate(new Date()),
         returnDate:    form.returnDate    || null,
         region:        form.region,
       })

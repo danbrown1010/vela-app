@@ -2,8 +2,23 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import { readdirSync } from 'fs'
+import { resolve } from 'path'
+
+const BG_DIR = resolve(import.meta.dirname, 'public/chomp_images/backgrounds')
+let backgroundUrls = []
+try {
+  backgroundUrls = readdirSync(BG_DIR)
+    .filter(f => /\.(jpg|jpeg|png|webp)$/i.test(f))
+    .map(f => `/chomp_images/backgrounds/${f}`)
+} catch {
+  // directory absent at build time — graceful fallback
+}
 
 export default defineConfig({
+  define: {
+    __BACKGROUND_URLS__: JSON.stringify(backgroundUrls),
+  },
   base: '/',
   server: {
     port: 5173,

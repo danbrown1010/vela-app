@@ -10,6 +10,7 @@ import { syncGearToSupabase, deleteGearFromSupabase, syncTripToSupabase, deleteT
 import BottomNav from './components/BottomNav'
 import HomePage from './pages/HomePage'
 import AuthPage from './pages/AuthPage'
+import { BackgroundProvider } from './contexts/BackgroundContext'
 
 const TripPage         = lazy(() => import('./pages/TripPage'))
 const SafetyPage       = lazy(() => import('./pages/SafetyPage'))
@@ -47,7 +48,11 @@ export default function App() {
   }
 
   if (!user) {
-    return <AuthPage onSignIn={signInWithGoogle} notAllowed={notAllowed} />
+    return (
+      <BackgroundProvider>
+        <AuthPage onSignIn={signInWithGoogle} notAllowed={notAllowed} />
+      </BackgroundProvider>
+    )
   }
 
   return (

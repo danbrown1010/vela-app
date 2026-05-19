@@ -1,4 +1,14 @@
 import { VelaLogo } from '../components/VelaLogo'
+import RotatingBackground from '../components/RotatingBackground'
+
+const OVERLAY = `linear-gradient(
+  to bottom,
+  rgba(28,33,23,0.15) 0%,
+  rgba(28,33,23,0.25) 30%,
+  rgba(28,33,23,0.70) 60%,
+  rgba(28,33,23,0.93) 80%,
+  rgba(28,33,23,0.98) 100%
+)`
 
 export default function AuthPage({ onSignIn, notAllowed = false }) {
   return (
@@ -9,30 +19,7 @@ export default function AuthPage({ onSignIn, notAllowed = false }) {
       position: 'relative',
       overflow: 'hidden',
     }}>
-      {/* Hero background — shifted to show road, less sky */}
-      <div style={{
-        position: 'absolute',
-        inset: 0,
-        backgroundImage: 'url(/Hero.jpg)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center 45%',
-        zIndex: 0,
-      }} />
-
-      {/* Gradient — lighter at top, sharp transition at bottom */}
-      <div style={{
-        position: 'absolute',
-        inset: 0,
-        background: `linear-gradient(
-          to bottom,
-          rgba(28,33,23,0.15) 0%,
-          rgba(28,33,23,0.25) 30%,
-          rgba(28,33,23,0.70) 60%,
-          rgba(28,33,23,0.93) 80%,
-          rgba(28,33,23,0.98) 100%
-        )`,
-        zIndex: 1,
-      }} />
+      <RotatingBackground overlay={OVERLAY} />
 
       {/* Content */}
       <div style={{
