@@ -237,12 +237,30 @@ function AppShell({ user }) {
               paddingTop: 'max(16px, env(safe-area-inset-top))',
               borderBottom: '1px solid var(--border)',
               background: 'var(--bg-secondary)',
-              display: 'flex', alignItems: 'center',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               flexShrink: 0,
             }}>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>
                 Settings
               </div>
+              <button
+                onClick={() => setShowSettings(false)}
+                aria-label="Close settings"
+                style={{
+                  width: 32, height: 32, borderRadius: 8,
+                  border: '1px solid var(--border)',
+                  background: 'transparent',
+                  color: 'var(--text-secondary)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', flexShrink: 0,
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth="2"
+                  strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+              </button>
             </div>
             <div style={{ flex: 1, overflowY: 'auto' }}>
               <SettingsPage
