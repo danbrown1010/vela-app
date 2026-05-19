@@ -35,7 +35,7 @@ export default function App() {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 'calc(var(--vh, 1svh) * 100)', background: 'var(--bg-primary)' }}>
         <svg width="48" height="48" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-          <rect width="100" height="100" rx="20" fill="#243020"/>
+          <rect width="100" height="100" rx="20" fill="var(--bg-card)"/>
           <g fill="var(--text-primary)">
             <path d="M50 5C41.7 5 35 11.7 35 20c0 11.5 15 28 15 28s15-16.5 15-28C65 11.7 58.3 5 50 5zM50 26c-3.3 0-6-2.7-6-6s2.7-6 6-6s6 2.7 6 6-2.7 6-6 6z"/>
             <path d="M2 92L30 38L45 63L38 73L53 92H2z"/>
