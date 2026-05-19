@@ -6,6 +6,7 @@ const STYLES = {
   monitor:  { bg: 'color-mix(in srgb, var(--safe) 20%, transparent)',    border: 'var(--safe)',    color: 'var(--safe)'    },
   linked:   { bg: 'color-mix(in srgb, var(--safe) 15%, transparent)',    border: 'var(--safe)',    color: 'var(--safe)'    },
   off:      { bg: 'color-mix(in srgb, var(--text-tertiary) 10%, transparent)', border: 'var(--text-tertiary)', color: 'var(--text-tertiary)' },
+  soon:     { bg: 'color-mix(in srgb, var(--text-tertiary) 10%, transparent)', border: 'var(--text-tertiary)', color: 'var(--text-tertiary)' },
 }
 
 export function StatusBadge({ status, label, dot = true }) {

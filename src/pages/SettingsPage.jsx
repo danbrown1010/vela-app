@@ -275,7 +275,7 @@ export default function SettingsPage({ onBack, onNavigateTab, onClose, embedded 
               </div>
             )}
           </div>
-          <IntegrationRow Icon={IconWifi}  title="Starlink"        sub="Local dish proxy"          badge={{ status: STARLINK_PROXY ? 'linked' : 'off', label: STARLINK_PROXY ? 'CONFIGURED' : 'NOT SET' }} onTap={() => setStarlinkSheet(true)} />
+          <IntegrationRow Icon={IconWifi}  title="Starlink"        sub="Dish telemetry"            badge={{ status: 'soon', label: 'SOON' }} onTap={undefined} />
           <IntegrationRow
               Icon={IconZap}
               title="EcoFlow"
@@ -285,7 +285,7 @@ export default function SettingsPage({ onBack, onNavigateTab, onClose, embedded 
             />
           <IntegrationRow Icon={IconMap}   title="OnX Offroad"     sub="Maps & route planning"     badge={{ status: 'linked', label: 'LINKED' }} onTap={() => window.open('https://www.onxmaps.com/offroad/app', '_blank')} />
           <IntegrationRow Icon={IconBook}  title="Gaia GPS"        sub="Topo + satellite layers"   badge={{ status: 'linked', label: 'LINKED' }} onTap={() => window.open('https://www.gaiagps.com', '_blank')} />
-          <IntegrationRow Icon={IconCog}   title="Home Assistant"  sub="Departure automation"      badge={{ status: HA_URL ? 'linked' : 'off', label: HA_URL ? 'CONFIGURED' : 'NOT SET' }} onTap={() => setHaSheet(true)} last />
+          <IntegrationRow Icon={IconCog}   title="Home Assistant"  sub="Vehicle sensors & network"  badge={{ status: HA_URL ? 'linked' : 'off', label: HA_URL ? 'CONFIGURED' : 'NOT SET' }} onTap={() => setHaSheet(true)} last />
         </Section>
 
         {/* ── Notifications ───────────────────────────────────────────────────── */}
@@ -606,12 +606,15 @@ function IntegrationRow({ Icon, title, sub, badge, onTap, last }) {
   return (
     <button
       onClick={onTap}
+      disabled={!onTap}
       className="w-full active:opacity-70 transition-opacity"
       style={{
         display: 'flex', alignItems: 'center', gap: 12,
         padding: '12px 16px', textAlign: 'left', background: 'transparent',
         borderBottom: last ? 'none' : '1px solid var(--border)',
-        cursor: 'pointer', WebkitTapHighlightColor: 'transparent',
+        cursor: onTap ? 'pointer' : 'default',
+        opacity: onTap ? 1 : 0.6,
+        WebkitTapHighlightColor: 'transparent',
       }}
     >
       <div style={{ width: 32, height: 32, borderRadius: 10, background: 'var(--bg-secondary)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
