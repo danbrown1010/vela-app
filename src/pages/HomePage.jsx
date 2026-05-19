@@ -165,6 +165,7 @@ function IdleHome({ onPlanTrip, onEditTrip, onNavigateToDocs }) {
         subtitle="GO FURTHER."
         uppercaseTitle={false}
         gps={{ state: gpsState, accuracyM: gpsAccuracyM }}
+        onOpenSettings={() => window.dispatchEvent(new CustomEvent('vela:open-settings', { detail: {} }))}
       />
       <div
         ref={scrollRef}

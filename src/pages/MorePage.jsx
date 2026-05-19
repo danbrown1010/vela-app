@@ -54,6 +54,7 @@ export default function MorePage({ onNavigate }) {
         uppercaseTitle={false}
         badge={{ label: 'PRO', tone: 'success' }}
         gps={{ state: gpsState, accuracyM: gpsAccuracyM }}
+        onOpenSettings={() => window.dispatchEvent(new CustomEvent('vela:open-settings', { detail: {} }))}
       />
 
       <div style={{ flex: 1, overflowY: 'auto' }}>

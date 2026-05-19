@@ -154,6 +154,7 @@ export default function RigPage() {
             accuracyM: Math.round(location?.accuracy ?? 0),
           }}
           scrollProgress={scrollProgress}
+          onOpenSettings={() => window.dispatchEvent(new CustomEvent('vela:open-settings', { detail: {} }))}
         >
           <div style={{ display: 'flex', gap: 8, overflowX: 'auto', scrollbarWidth: 'none' }}>
             {[

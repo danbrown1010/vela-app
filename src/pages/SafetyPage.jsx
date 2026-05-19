@@ -121,6 +121,7 @@ export default function SafetyPage() {
           tone: monitorBadge === 'danger' ? 'danger' : monitorBadge === 'warn' ? 'warn' : 'success',
         }}
         gps={{ state: gpsState, accuracyM: gpsAccuracyM }}
+        onOpenSettings={() => window.dispatchEvent(new CustomEvent('vela:open-settings', { detail: {} }))}
       />
       <div
         ref={scrollRef}
