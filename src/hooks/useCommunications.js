@@ -3,11 +3,14 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 const POLL_MS = 10000
 
 const ENTITIES = {
-  wifi:   'switch.gl_inet_axt1800_chomp_wifi',
-  cpu:    'sensor.gl_inet_axt1800_cpu_temperature',
-  memory: 'sensor.gl_inet_axt1800_memory_usage',
-  uptime: 'sensor.gl_inet_axt1800_uptime',
-  flash:  'sensor.gl_inet_axt1800_flash_usage',
+  wifi:           'switch.gl_inet_axt1800_chomp_wifi',
+  cpu:            'sensor.gl_inet_axt1800_cpu_temperature',
+  memory:         'sensor.gl_inet_axt1800_memory_usage',
+  uptime:         'sensor.gl_inet_axt1800_uptime',
+  flash:          'sensor.gl_inet_axt1800_flash_usage',
+  speedtestDown:  'sensor.speedtest_download',
+  speedtestUp:    'sensor.speedtest_upload',
+  speedtestPing:  'sensor.speedtest_ping',
 }
 
 async function fetchState(haUrl, token, entityId) {
@@ -81,6 +84,9 @@ export function useCommunications() {
   const memoryPct = parseFloat(data?.memory?.state)
   const flashPct = parseFloat(data?.flash?.state)
   const uptimeIso = data?.uptime?.state
+  const speedtestDown = parseFloat(data?.speedtestDown?.state)
+  const speedtestUp = parseFloat(data?.speedtestUp?.state)
+  const speedtestPing = parseFloat(data?.speedtestPing?.state)
 
   return {
     loading, error, lastUpdated, isConfigured,
@@ -89,6 +95,9 @@ export function useCommunications() {
     memoryPct: Number.isFinite(memoryPct) ? memoryPct : null,
     flashPct: Number.isFinite(flashPct) ? flashPct : null,
     uptimeIso,
+    speedtestDown: Number.isFinite(speedtestDown) ? speedtestDown : null,
+    speedtestUp: Number.isFinite(speedtestUp) ? speedtestUp : null,
+    speedtestPing: Number.isFinite(speedtestPing) ? speedtestPing : null,
     refetch: fetchAll,
   }
 }

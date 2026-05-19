@@ -1,15 +1,14 @@
 import { useState, useEffect } from 'react'
-import { IconSun, IconPlugZap, IconZap, IconCar, IconUsb, IconRefresh } from '../components/icons'
+import { IconRefresh } from '../components/icons'
 import { useAppStore } from '../store/index'
 import { useFleet } from '../hooks/useFleet'
 import { supabase } from '../lib/supabase'
-import { useEcoFlow } from '../hooks/useEcoFlow'
-import { ECOFLOW_DEVICES } from '../config/devices'
 import { StatusBadge } from '../components/StatusBadge'
-import { Skeleton } from '../components/Skeleton'
 import { GpsStatus } from '../components/GpsStatus'
 import HomeAssistantCard from '../components/HomeAssistantCard'
 import { CommunicationsSection } from './CommunicationsSection'
+import { EcoflowDeviceCard } from '../components/EcoflowDeviceCard'
+import { useEcoflowConfig } from '../hooks/useEcoflowConfig'
 
 // ─── Seed data ────────────────────────────────────────────────────────────────
 
@@ -86,7 +85,7 @@ export default function RigPage() {
     if (!integrations[key]) toggleIntegration(key)
     setActiveIntegration(key)
   }
-  const { accent } = useAppStore()
+  const { accent, user } = useAppStore()
 
   const toggleLight = (id) =>
     setLights(prev => ({ ...prev, [id]: { ...prev[id], on: !prev[id].on } }))
@@ -477,356 +476,98 @@ function TempZones({ haSensors = [] }) {
 
 // ─── EcoFlow ──────────────────────────────────────────────────────────────────
 
-function formatRemainTime(minutes) {
-  if (minutes == null || minutes <= 0) return '—'
-  const h = Math.floor(minutes / 60)
-  const m = minutes % 60
-  if (h === 0) return `${m}m`
-  if (m === 0) return `${h}h`
-  return `${h}h ${m}m`
-}
-
-function formatLastUpdated(date) {
-  if (!date) return null
-  const secs = Math.floor((Date.now() - date.getTime()) / 1000)
-  if (secs < 15) return 'Updated just now'
-  if (secs < 90) return `Updated ${secs}s ago`
-  const mins = Math.floor(secs / 60)
-  if (mins < 60) return `Updated ${mins}min ago`
-  return `Updated ${Math.floor(mins / 60)}h ago`
-}
-
-function EcoToast({ message }) {
-  return (
-    <div
-      className="fixed left-0 right-0 flex justify-center z-[60] pointer-events-none"
-      style={{ top: 'calc(env(safe-area-inset-top) + 16px)' }}
-    >
-      <div
-        className="px-4 py-2 rounded-full text-sm font-medium text-[var(--text-primary)]"
-        style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}
-      >
-        {message}
-      </div>
-    </div>
-  )
-}
-
-function ChargingIndicator({ netFlow }) {
-  const color = netFlow > 0 ? '#22c55e' : netFlow < 0 ? '#ef4444' : '#6b7280'
-  const shouldPulse = netFlow !== 0
-
-  return (
-    <div style={{ position: 'relative', width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-      {shouldPulse && (
-        <div style={{ position: 'absolute', width: 24, height: 24, borderRadius: '50%', background: color, opacity: 0.2, animation: 'gps-pulse 2s ease-out infinite' }} />
-      )}
-      {shouldPulse && (
-        <div style={{ position: 'absolute', width: 16, height: 16, borderRadius: '50%', background: color, opacity: 0.3, animation: 'gps-pulse 2s ease-out infinite', animationDelay: '0.4s' }} />
-      )}
-      <div style={{ width: 10, height: 10, borderRadius: '50%', background: color, position: 'relative', zIndex: 1, boxShadow: shouldPulse ? `0 0 6px ${color}` : 'none' }} />
-    </div>
-  )
-}
-
-function PowerFlowCard({ type, data }) {
-  const isIn = type === 'in'
-  const accentColor = isIn ? '#22c55e' : '#f97316'
-
-  const rows = isIn
-    ? [
-        {
-          label: 'Solar',
-          watts: data?.solarWatts ?? 0,
-          icon: <IconSun style={{ width: 12, height: 12 }} />,
-        },
-        {
-          label: 'AC Mains',
-          watts: data?.acInputWatts ?? 0,
-          icon: <IconPlugZap style={{ width: 12, height: 12 }} />,
-        },
-        {
-          label: 'Alternator',
-          watts: data?.alternatorWatts ?? 0,
-          icon: <IconZap style={{ width: 12, height: 12 }} />,
-        },
-      ]
-    : [
-        {
-          label: 'AC',
-          watts: data?.acOutputWatts ?? 0,
-          icon: <IconPlugZap style={{ width: 12, height: 12 }} />,
-        },
-        {
-          label: 'DC 12V',
-          watts: data?.dcOutputWatts ?? 0,
-          icon: <IconCar style={{ width: 12, height: 12 }} />,
-        },
-        {
-          label: 'USB',
-          watts: data?.usbOutputWatts ?? 0,
-          icon: <IconUsb style={{ width: 12, height: 12 }} />,
-        },
-      ]
-
-  const total = isIn ? (data?.totalInputWatts ?? 0) : (data?.totalOutputWatts ?? 0)
-
-  return (
-    <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl p-2.5 flex flex-col gap-1">
-      <div className="flex items-center justify-between mb-0.5 px-1">
-        <span className="text-[9px] font-bold uppercase tracking-widest" style={{ color: accentColor }}>
-          {isIn ? 'IN' : 'OUT'}
-        </span>
-      </div>
-      {rows.map(row => (
-        <div
-          key={row.label}
-          className={`flex items-center gap-1.5 px-1.5 py-1 rounded-lg${row.watts > 0 ? ' bg-[var(--border)]' : ''}`}
-        >
-          <span style={{ color: row.watts > 0 ? accentColor : '#4b5563' }}>{row.icon}</span>
-          <span className="text-[9px] text-[var(--text-secondary)] flex-1 leading-none">{row.label}</span>
-          <span className={`text-[10px] font-semibold tabular-nums ${row.watts > 0 ? 'text-[var(--text-primary)]' : 'text-[var(--text-tertiary)]'}`}>
-            {row.watts > 0 ? `${row.watts}W` : '—'}
-          </span>
-        </div>
-      ))}
-      <div className="flex justify-end px-1 pt-1 border-t border-[var(--border)] mt-0.5">
-        <span
-          className={`text-sm font-bold tabular-nums${total === 0 ? ' text-[var(--text-tertiary)]' : ''}`}
-          style={total > 0 ? { color: accentColor } : undefined}
-        >
-          {total}W
-        </span>
-      </div>
-    </div>
-  )
-}
-
-function PortToggleRow({ icon, label, watts, enabled, onToggle, accent }) {
-  return (
-    <div
-      className="bg-[var(--bg-secondary)] border border-[var(--border)] flex items-center gap-3 px-3 py-2.5 rounded-xl"
-      style={enabled ? { borderColor: 'rgba(34,197,94,0.35)' } : undefined}
-    >
-      <span className={enabled ? 'text-[#4ade80]' : 'text-[var(--text-tertiary)]'}>{icon}</span>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-[var(--text-primary)] leading-none">{label}</p>
-        <p className={`text-[10px] mt-0.5 ${enabled ? 'text-[#4ade80]' : 'text-[var(--text-secondary)]'}`}>
-          {enabled && watts > 0 ? `${watts}W` : enabled ? 'On' : 'Off'}
-        </p>
-      </div>
-      <div
-        onClick={onToggle}
-        className="relative w-11 h-6 bg-[var(--border)] rounded-full transition-colors duration-200 shrink-0 cursor-pointer select-none"
-        style={enabled ? { background: accent ?? '#f97316' } : undefined}
-      >
-        <div
-          className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200"
-          style={{ transform: enabled ? 'translateX(22px)' : 'translateX(2px)' }}
-        />
-      </div>
-    </div>
-  )
-}
-
-const DEVICE_LIST = Object.entries(ECOFLOW_DEVICES).map(([key, d]) => ({ key, ...d }))
-
 function EcoflowSection({ onShowInfo }) {
+  const { user } = useAppStore()
+  const { visibleDevices, loaded } = useEcoflowConfig(user?.id)
   const { accent } = useAppStore()
-  const chipInactive = { background: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--text-secondary)' }
-  const [selectedKey, setSelectedKey] = useState('delta2Max')
-  const [toast, setToast] = useState(null)
-  const [, tick] = useState(0)
-  const device = ECOFLOW_DEVICES[selectedKey]
-  const { data, loading, error, lastUpdated, refetch } = useEcoFlow(device.sn)
 
-  useEffect(() => {
-    const id = setInterval(() => tick(n => n + 1), 15000)
-    return () => clearInterval(id)
-  }, [])
-
-  const showToast = (msg) => {
-    setToast(msg)
-    setTimeout(() => setToast(null), 2000)
+  if (!loaded) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{
+          fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700,
+          color: 'var(--text-tertiary)',
+          textTransform: 'uppercase', letterSpacing: '0.1em',
+        }}>
+          EcoFlow
+        </div>
+        <div style={{
+          background: 'var(--bg-card)', border: '1px solid var(--border)',
+          borderRadius: 14, padding: 16, fontSize: 12,
+          color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)',
+          textAlign: 'center',
+        }}>
+          Loading…
+        </div>
+      </div>
+    )
   }
 
-  const soc = data?.soc ?? null
-  const barColor = soc == null ? '#4b5563' : soc > 50 ? '#22c55e' : soc > 20 ? '#f97316' : '#ef4444'
-  const totalIn  = data?.totalInputWatts  ?? 0
-  const totalOut = data?.totalOutputWatts ?? 0
-  const netWatts = totalIn - totalOut
+  if (visibleDevices.length === 0) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{
+          fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700,
+          color: 'var(--text-tertiary)',
+          textTransform: 'uppercase', letterSpacing: '0.1em',
+        }}>
+          EcoFlow
+        </div>
+        <div style={{
+          background: 'var(--bg-card)', border: '1px solid var(--border)',
+          borderRadius: 14, padding: 20, textAlign: 'center',
+        }}>
+          <div style={{
+            fontSize: 14, fontWeight: 600,
+            color: 'var(--text-primary)', fontFamily: 'var(--font-body)',
+            marginBottom: 4,
+          }}>
+            No EcoFlow devices selected
+          </div>
+          <div style={{
+            fontSize: 12, color: 'var(--text-secondary)',
+            fontFamily: 'var(--font-body)', marginBottom: 16, lineHeight: 1.5,
+          }}>
+            Choose which devices to monitor in Settings → Integrations → EcoFlow.
+          </div>
+          <button
+            onClick={() => {
+              window.dispatchEvent(
+                new CustomEvent('vela:open-settings', { detail: { section: 'ecoflow' } })
+              )
+            }}
+            style={{
+              padding: '9px 20px', borderRadius: 8, border: 'none',
+              background: accent, color: '#fff',
+              fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600,
+              cursor: 'pointer',
+            }}
+            className="active:opacity-80 transition-opacity"
+          >
+            Configure in Settings
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div>
-      {toast && <EcoToast message={toast} />}
-
-      <SectionLabel>EcoFlow</SectionLabel>
-
-      {/* Device selector chips */}
-      <div className="flex gap-2 overflow-x-auto pb-2 mb-3" style={{ scrollbarWidth: 'none' }}>
-        {DEVICE_LIST.map(d => (
-          <button
-            key={d.key}
-            onClick={() => setSelectedKey(d.key)}
-            className="shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-colors"
-            style={
-              d.key === selectedKey
-                ? { background: `${accent}26`, borderColor: `${accent}66`, color: accent }
-                : chipInactive
-            }
-          >
-            {d.name}
-          </button>
-        ))}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{
+        fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700,
+        color: 'var(--text-tertiary)',
+        textTransform: 'uppercase', letterSpacing: '0.1em',
+      }}>
+        EcoFlow
       </div>
-
-      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-4 flex flex-col gap-3">
-        {/* Card header */}
-        <div className="flex items-center justify-between">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <ChargingIndicator netFlow={netWatts} />
-            <div>
-              <div className="text-[var(--text-primary)]" style={{ fontSize: 14, fontWeight: 500, lineHeight: 1.2 }}>{device.name}</div>
-              <div className="text-[var(--text-secondary)]" style={{ fontSize: 11, lineHeight: 1.2, marginTop: 2 }}>
-                {netWatts > 0 ? `+${netWatts}W · Charging` : netWatts < 0 ? `${netWatts}W · Discharging` : 'Idle'}
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => onShowInfo({ device, data })}
-              className="flex items-center justify-center text-[var(--text-secondary)]"
-              style={{ width: 24, height: 24, borderRadius: '50%', border: '1px solid #3a3a3a', background: 'transparent', fontSize: 12, fontStyle: 'italic', fontWeight: 600, lineHeight: 1 }}
-              aria-label="Device info"
-            >
-              i
-            </button>
-            <button
-              onClick={refetch}
-              className="w-7 h-7 flex items-center justify-center rounded-lg text-[var(--text-secondary)] hover:text-white transition-colors"
-              style={{ background: 'var(--bg-secondary)' }}
-              aria-label="Refresh"
-            >
-              <IconRefresh style={{ width: 14, height: 14 }} />
-            </button>
-          </div>
-        </div>
-
-        {loading && !data ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {/* Battery bar skeleton */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Skeleton className="h-3 rounded" style={{ width: 52 }} />
-                <Skeleton className="h-3 rounded" style={{ width: 36 }} />
-              </div>
-              <Skeleton className="h-2 rounded-full w-full" />
-            </div>
-            {/* Power flow grid skeleton */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              <Skeleton className="rounded-xl" style={{ height: 96 }} />
-              <Skeleton className="rounded-xl" style={{ height: 96 }} />
-            </div>
-            {/* Net / time skeleton */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              <Skeleton className="rounded-lg" style={{ height: 44 }} />
-              <Skeleton className="rounded-lg" style={{ height: 44 }} />
-            </div>
-            {/* Port rows skeleton */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <Skeleton className="rounded-xl" style={{ height: 48 }} />
-              <Skeleton className="rounded-xl" style={{ height: 48 }} />
-              <Skeleton className="rounded-xl" style={{ height: 48 }} />
-            </div>
-          </div>
-        ) : error ? (
-          <p className="text-xs text-[#f87171] text-center py-2">{error}</p>
-        ) : (
-          <>
-            {/* Battery bar */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-sm text-[var(--text-secondary)]">Battery</span>
-                <span className="text-sm font-bold" style={{ color: barColor }}>
-                  {loading ? '—' : soc != null ? `${soc}%` : '—'}
-                  {netWatts > 0 && <span style={{ fontSize: 12, marginLeft: 4, color: '#22c55e' }}>⚡</span>}
-                </span>
-              </div>
-              <div className="h-2 bg-[var(--border)] rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all duration-500"
-                  style={{ width: `${soc ?? 0}%`, background: barColor }}
-                />
-              </div>
-              {!loading && (
-                <div className="flex justify-between mt-1.5">
-                  <span className={`text-[10px] font-medium ${totalIn > 0 ? 'text-[#4ade80]' : 'text-[var(--text-tertiary)]'}`}>
-                    ↓ {totalIn}W in
-                  </span>
-                  <span className={`text-[10px] font-medium ${totalOut > 0 ? 'text-[#fb923c]' : 'text-[var(--text-tertiary)]'}`}>
-                    ↑ {totalOut}W out
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Power flow grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              <PowerFlowCard type="in"  data={data} />
-              <PowerFlowCard type="out" data={data} />
-            </div>
-
-            {/* Net flow + time remaining */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg px-2.5 py-2 flex flex-col items-center gap-0.5">
-                <span className={`text-xs font-bold tabular-nums ${netWatts > 0 ? 'text-[#4ade80]' : netWatts < 0 ? 'text-[#f87171]' : 'text-[var(--text-tertiary)]'}`}>
-                  {netWatts > 0 ? `+${netWatts}W` : `${netWatts}W`}
-                </span>
-                <span className="text-[9px] text-[var(--text-secondary)] uppercase tracking-wider">Net</span>
-              </div>
-              <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg px-2.5 py-2 flex flex-col items-center gap-0.5">
-                <span className="text-xs font-bold text-[var(--text-primary)]">
-                  {loading ? '—' : formatRemainTime(data?.remainTime)}
-                </span>
-                <span className="text-[9px] text-[var(--text-secondary)] uppercase tracking-wider">Time left</span>
-              </div>
-            </div>
-
-            {/* Port toggles */}
-            <div className="flex flex-col gap-2">
-              <PortToggleRow
-                label="AC Output"
-                watts={data?.acOutputWatts ?? 0}
-                enabled={data?.acEnabled ?? false}
-                accent={accent}
-                onToggle={() => showToast('Port control coming in Phase 5')}
-                icon={<IconPlugZap style={{ width: 14, height: 14 }} />}
-              />
-              <PortToggleRow
-                label="12V DC"
-                watts={data?.dcOutputWatts ?? 0}
-                enabled={data?.dcEnabled ?? false}
-                accent={accent}
-                onToggle={() => showToast('Port control coming in Phase 5')}
-                icon={<IconCar style={{ width: 14, height: 14 }} />}
-              />
-              <PortToggleRow
-                label="USB & Type-C"
-                watts={data?.usbOutputWatts ?? 0}
-                enabled={data?.usbEnabled ?? false}
-                accent={accent}
-                onToggle={() => showToast('Port control coming in Phase 5')}
-                icon={<IconUsb style={{ width: 14, height: 14 }} />}
-              />
-            </div>
-          </>
-        )}
-
-        {lastUpdated && (
-          <p className="text-[10px] text-[var(--text-tertiary)] text-right -mt-1">
-            {formatLastUpdated(lastUpdated)}
-          </p>
-        )}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {visibleDevices.map((device) => (
+          <EcoflowDeviceCard
+            key={device.id}
+            device={device}
+            onShowInfo={onShowInfo}
+          />
+        ))}
       </div>
     </div>
   )

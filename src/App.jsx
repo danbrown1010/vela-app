@@ -121,11 +121,12 @@ function AppShell({ user }) {
     return () => window.removeEventListener('online', handleOnline)
   }, [])
 
-  const [activeTab,    setActiveTab]    = useState('home')
-  const [showCreate,   setShowCreate]   = useState(false)
-  const [editingTrip,  setEditingTrip]  = useState(null)
-  const [moreSubview,  setMoreSubview]  = useState(null)
-  const [showSettings, setShowSettings] = useState(false)
+  const [activeTab,             setActiveTab]             = useState('home')
+  const [showCreate,            setShowCreate]            = useState(false)
+  const [editingTrip,           setEditingTrip]           = useState(null)
+  const [moreSubview,           setMoreSubview]           = useState(null)
+  const [showSettings,          setShowSettings]          = useState(false)
+  const [pendingSettingsSection, setPendingSettingsSection] = useState(null)
 
   const openCreate  = () => setShowCreate(true)
   const closeCreate = () => setShowCreate(false)
@@ -137,6 +138,16 @@ function AppShell({ user }) {
     setMoreSubview(null)
     setShowSettings(false)
   }
+
+  // Handle vela:open-settings deep-link events
+  useEffect(() => {
+    const handler = (e) => {
+      setPendingSettingsSection(e.detail?.section ?? null)
+      setShowSettings(true)
+    }
+    window.addEventListener('vela:open-settings', handler)
+    return () => window.removeEventListener('vela:open-settings', handler)
+  }, [])
 
   // Handle ?invite=xxx deep link
   useEffect(() => {
@@ -304,6 +315,8 @@ function AppShell({ user }) {
                 embedded
                 onClose={() => setShowSettings(false)}
                 onNavigateTab={handleTabChange}
+                pendingSection={pendingSettingsSection}
+                onConsumePendingSection={() => setPendingSettingsSection(null)}
               />
             </div>
           </div>

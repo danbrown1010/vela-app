@@ -6,6 +6,7 @@ import { saveAnthropicKey, clearAnthropicKey, hasAnthropicKey } from '../utils/s
 import { UserAvatar } from '../components/UserAvatar'
 import { getFirstName } from '../utils/userHelpers'
 import { StatusBadge } from '../components/StatusBadge'
+import { useEcoflowConfig } from '../hooks/useEcoflowConfig'
 
 const CONNECTED_APPS = [
   { id: 'onx',      title: 'OnX Offroad', sub: 'Maps & route planning'  },
@@ -37,7 +38,7 @@ const HA_URL         = import.meta.env.VITE_HA_URL         || null
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function SettingsPage({ onBack, onNavigateTab, onClose, embedded = false }) {
+export default function SettingsPage({ onBack, onNavigateTab, onClose, embedded = false, pendingSection, onConsumePendingSection }) {
   const [subPage, setSubPage] = useState(null)
   const { accent, setAccent, theme, setTheme, user, profile, isPro, signOut, petsEnabled, setPetsEnabled, tripLabels, setTripLabels } = useAppStore()
 
@@ -94,8 +95,23 @@ export default function SettingsPage({ onBack, onNavigateTab, onClose, embedded 
   const [showProNote, setShowProNote]   = useState(false)
   const [starlinkSheet, setStarlinkSheet] = useState(false)
   const [haSheet, setHaSheet]             = useState(false)
+  const [ecoflowSheet, setEcoflowSheet]   = useState(false)
   const [haUrl, setHaUrl]     = useState(() => localStorage.getItem('vela-ha-url') ?? '')
   const [haToken, setHaToken] = useState(() => localStorage.getItem('vela-ha-token') ?? '')
+
+  useEffect(() => {
+    if (!pendingSection) return
+    if (pendingSection === 'starlink') {
+      setStarlinkSheet(true)
+      onConsumePendingSection?.()
+    } else if (pendingSection === 'ecoflow') {
+      setEcoflowSheet(true)
+      onConsumePendingSection?.()
+    } else if (pendingSection === 'home_assistant') {
+      setHaSheet(true)
+      onConsumePendingSection?.()
+    }
+  }, [pendingSection, onConsumePendingSection])
 
   const handleFrequencyTap = (opt) => {
     if (opt.proOnly && !isPro) {
@@ -260,7 +276,13 @@ export default function SettingsPage({ onBack, onNavigateTab, onClose, embedded 
             )}
           </div>
           <IntegrationRow Icon={IconWifi}  title="Starlink"        sub="Local dish proxy"          badge={{ status: STARLINK_PROXY ? 'linked' : 'off', label: STARLINK_PROXY ? 'CONFIGURED' : 'NOT SET' }} onTap={() => setStarlinkSheet(true)} />
-          <IntegrationRow Icon={IconZap}   title="EcoFlow"         sub="Power station telemetry"   badge={{ status: 'linked', label: 'LINKED' }} onTap={() => onNavigateTab?.('rig')} />
+          <IntegrationRow
+              Icon={IconZap}
+              title="EcoFlow"
+              sub="Power station telemetry"
+              badge={{ status: 'linked', label: 'LINKED' }}
+              onTap={() => setEcoflowSheet(true)}
+            />
           <IntegrationRow Icon={IconMap}   title="OnX Offroad"     sub="Maps & route planning"     badge={{ status: 'linked', label: 'LINKED' }} onTap={() => window.open('https://www.onxmaps.com/offroad/app', '_blank')} />
           <IntegrationRow Icon={IconBook}  title="Gaia GPS"        sub="Topo + satellite layers"   badge={{ status: 'linked', label: 'LINKED' }} onTap={() => window.open('https://www.gaiagps.com', '_blank')} />
           <IntegrationRow Icon={IconCog}   title="Home Assistant"  sub="Departure automation"      badge={{ status: HA_URL ? 'linked' : 'off', label: HA_URL ? 'CONFIGURED' : 'NOT SET' }} onTap={() => setHaSheet(true)} last />
@@ -418,6 +440,15 @@ export default function SettingsPage({ onBack, onNavigateTab, onClose, embedded 
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── EcoFlow device picker sheet ──────────────────────────────────────── */}
+      {ecoflowSheet && (
+        <EcoflowDevicePickerSheet
+          accent={accent}
+          userId={user?.id}
+          onClose={() => setEcoflowSheet(false)}
+        />
       )}
 
       {/* ── Home Assistant bottom sheet ───────────────────────────────────────── */}
@@ -725,6 +756,120 @@ function Toggle({ on, onToggle }) {
         className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200"
         style={{ transform: on ? 'translateX(22px)' : 'translateX(2px)' }}
       />
+    </div>
+  )
+}
+
+// ─── EcoFlow device picker sheet ──────────────────────────────────────────────
+
+function EcoflowDevicePickerSheet({ accent, userId, onClose }) {
+  const { allDevices, visibleDeviceIds, toggle, loaded } = useEcoflowConfig(userId)
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 300,
+        background: 'rgba(0,0,0,0.5)',
+        display: 'flex', alignItems: 'flex-end',
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: '100%', maxHeight: '85vh', overflowY: 'auto',
+          background: 'var(--bg-card)',
+          borderRadius: '20px 20px 0 0',
+          border: '1px solid var(--border)', borderBottom: 'none',
+          padding: '24px 20px',
+          paddingBottom: 'calc(24px + env(safe-area-inset-bottom))',
+        }}
+      >
+        <div style={{
+          width: 36, height: 4, borderRadius: 2,
+          background: 'var(--border)', margin: '0 auto 20px',
+        }} />
+
+        <div style={{
+          fontSize: 18, fontWeight: 700,
+          color: 'var(--text-primary)', fontFamily: 'var(--font-body)', marginBottom: 4,
+        }}>
+          EcoFlow Devices
+        </div>
+        <div style={{
+          fontSize: 13, color: 'var(--text-secondary)',
+          fontFamily: 'var(--font-body)', marginBottom: 20, lineHeight: 1.5,
+        }}>
+          Choose which devices to show in the Power section of the Rig page.
+        </div>
+
+        {!loaded && (
+          <div style={{
+            fontSize: 12, color: 'var(--text-tertiary)',
+            fontFamily: 'var(--font-body)', textAlign: 'center', padding: 16,
+          }}>
+            Loading…
+          </div>
+        )}
+
+        {loaded && allDevices.map((device) => {
+          const checked = visibleDeviceIds.includes(device.id)
+          return (
+            <button
+              key={device.id}
+              onClick={() => toggle(device.id)}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+                padding: '12px 14px', marginBottom: 8,
+                background: 'var(--bg-secondary)',
+                borderRadius: 10,
+                border: `1px solid ${checked ? `${accent}99` : 'var(--border)'}`,
+                cursor: 'pointer', textAlign: 'left',
+                transition: 'border-color 0.15s, background 0.15s',
+              }}
+              className="active:opacity-80 transition-opacity"
+            >
+              <div style={{
+                width: 20, height: 20, borderRadius: 6, flexShrink: 0,
+                border: `1.5px solid ${checked ? accent : 'var(--border)'}`,
+                background: checked ? accent : 'transparent',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'all 0.15s',
+              }}>
+                {checked && (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                       stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                )}
+              </div>
+
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{
+                  fontSize: 14, fontWeight: 600,
+                  color: 'var(--text-primary)', fontFamily: 'var(--font-body)',
+                }}>
+                  {device.name}
+                </div>
+                <div style={{
+                  fontSize: 11, color: 'var(--text-tertiary)',
+                  fontFamily: 'var(--font-body)', marginTop: 2,
+                }}>
+                  {device.model}
+                  {device.capacity > 0 ? ` · ${device.capacity.toLocaleString()} Wh` : ''}
+                </div>
+              </div>
+            </button>
+          )
+        })}
+
+        <div style={{
+          fontSize: 11, fontFamily: 'var(--font-mono)',
+          color: 'var(--text-tertiary)', textAlign: 'center', marginTop: 12,
+        }}>
+          {visibleDeviceIds.length} of {allDevices.length} selected
+        </div>
+      </div>
     </div>
   )
 }

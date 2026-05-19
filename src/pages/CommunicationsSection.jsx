@@ -7,6 +7,7 @@ export function CommunicationsSection() {
   const {
     loading, error, lastUpdated, isConfigured,
     wifiOn, cpuTempF, memoryPct, flashPct, uptimeIso,
+    speedtestDown, speedtestUp, speedtestPing,
     refetch,
   } = useCommunications()
 
@@ -89,6 +90,26 @@ export function CommunicationsSection() {
         <Metric label="Memory" value={memoryPct != null ? `${memoryPct.toFixed(0)}%` : '—'} />
         <Metric label="Flash"  value={flashPct != null ? `${flashPct.toFixed(0)}%` : '—'} />
       </div>
+
+      {(speedtestDown != null || speedtestUp != null || speedtestPing != null) && (
+        <div style={{
+          display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 14,
+          paddingTop: 14, borderTop: '1px solid var(--border)',
+        }}>
+          <Metric
+            label="↓ Download"
+            value={speedtestDown != null ? `${speedtestDown.toFixed(1)} Mbps` : '—'}
+          />
+          <Metric
+            label="↑ Upload"
+            value={speedtestUp != null ? `${speedtestUp.toFixed(1)} Mbps` : '—'}
+          />
+          <Metric
+            label="Ping"
+            value={speedtestPing != null ? `${Math.round(speedtestPing)} ms` : '—'}
+          />
+        </div>
+      )}
 
       <div style={{ display: 'flex', gap: 8 }}>
         <LinkButton href={slateAdminUrl} label="Slate AX admin" />
