@@ -1,6 +1,32 @@
 import { useCommunications } from '../hooks/useCommunications'
 import { useAppStore } from '../store/index'
 
+// Slate AX (AXT1800) thresholds
+const THRESHOLDS = {
+  cpuTempF: { warning: 130, critical: 155 },  // throttles around 160°F
+  memoryPct: { warning: 70,  critical: 85 },
+  flashPct:  { warning: 80,  critical: 95 },
+}
+
+const SEVERITY_COLORS = {
+  normal:   'var(--text-primary)',
+  warning:  '#f59e0b',
+  critical: '#ef4444',
+}
+
+const SEVERITY_DOT_COLORS = {
+  normal:   '#22c55e',
+  warning:  '#f59e0b',
+  critical: '#ef4444',
+}
+
+function severityFor(value, { warning, critical }) {
+  if (!Number.isFinite(value)) return 'normal'
+  if (value >= critical) return 'critical'
+  if (value >= warning) return 'warning'
+  return 'normal'
+}
+
 export function CommunicationsSection() {
   const { accent } = useAppStore()
   const {
@@ -74,9 +100,21 @@ export function CommunicationsSection() {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 14 }}>
-        <Metric label="CPU"    value={cpuTempF != null ? `${Math.round(cpuTempF)}°F` : '—'} />
-        <Metric label="Memory" value={memoryPct != null ? `${memoryPct.toFixed(0)}%` : '—'} />
-        <Metric label="Flash"  value={flashPct != null ? `${flashPct.toFixed(0)}%` : '—'} />
+        <Metric
+          label="CPU"
+          value={cpuTempF != null ? `${Math.round(cpuTempF)}°F` : '—'}
+          severity={severityFor(cpuTempF, THRESHOLDS.cpuTempF)}
+        />
+        <Metric
+          label="Memory"
+          value={memoryPct != null ? `${memoryPct.toFixed(0)}%` : '—'}
+          severity={severityFor(memoryPct, THRESHOLDS.memoryPct)}
+        />
+        <Metric
+          label="Flash"
+          value={flashPct != null ? `${flashPct.toFixed(0)}%` : '—'}
+          severity={severityFor(flashPct, THRESHOLDS.flashPct)}
+        />
       </div>
 
       {(speedtestDown != null || speedtestUp != null || speedtestPing != null) && (
@@ -200,19 +238,29 @@ function Empty({ title, body, ctaLabel, accent, onClick }) {
   )
 }
 
-function Metric({ label, value }) {
+function Metric({ label, value, severity = 'normal' }) {
+  const valueColor = SEVERITY_COLORS[severity] ?? SEVERITY_COLORS.normal
+  const dotColor   = SEVERITY_DOT_COLORS[severity] ?? SEVERITY_DOT_COLORS.normal
+
   return (
     <div>
       <div style={{
         fontSize: 10, fontFamily: 'var(--font-mono)',
         color: 'var(--text-tertiary)',
         textTransform: 'uppercase', letterSpacing: '0.08em',
+        display: 'flex', alignItems: 'center', gap: 5,
       }}>
+        <span style={{
+          width: 6, height: 6, borderRadius: '50%',
+          background: dotColor,
+          flexShrink: 0,
+        }} />
         {label}
       </div>
       <div style={{
         fontSize: 18, fontWeight: 600,
-        color: 'var(--text-primary)', fontFamily: 'var(--font-body)', marginTop: 2,
+        color: valueColor, fontFamily: 'var(--font-body)', marginTop: 2,
+        transition: 'color 0.3s',
       }}>
         {value}
       </div>

@@ -576,6 +576,34 @@ function EcoflowSection({ onShowInfo }) {
           </div>
         </>
       )}
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, marginTop: 4 }}>
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent('ecoflow:refresh-all'))}
+          aria-label="Refresh all EcoFlow devices"
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '6px 10px', borderRadius: 8,
+            border: '1px solid var(--border)',
+            background: 'transparent',
+            color: 'var(--text-secondary)',
+            fontSize: 11, fontFamily: 'var(--font-mono)',
+            letterSpacing: '0.06em',
+            cursor: 'pointer',
+          }}
+          className="active:opacity-70 transition-opacity"
+        >
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" strokeWidth="2.5"
+               strokeLinecap="round" strokeLinejoin="round">
+            <path d="M23 4v6h-6" />
+            <path d="M1 20v-6h6" />
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10" />
+            <path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14" />
+          </svg>
+          REFRESH ALL
+        </button>
+      </div>
     </div>
   )
 }

@@ -59,7 +59,7 @@ export default function HomeAssistantCard() {
           flexShrink: 0,
         }} />
         <div style={{ fontSize: 13, color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)' }}>
-          Connecting to chompOS...
+          Connecting to ChompOS...
         </div>
       </div>
     )
@@ -85,7 +85,7 @@ export default function HomeAssistantCard() {
             fontSize: 13, fontWeight: 500,
             color: 'var(--text-secondary)', fontFamily: 'var(--font-body)',
           }}>
-            chompOS offline
+            ChompOS offline
           </div>
           <div style={{
             fontSize: 11, color: 'var(--text-tertiary)',
@@ -139,7 +139,7 @@ export default function HomeAssistantCard() {
             fontSize: 13, fontWeight: 600,
             color: 'var(--text-primary)', fontFamily: 'var(--font-body)',
           }}>
-            chompOS
+            ChompOS
           </div>
           <div style={{
             fontSize: 10, fontFamily: 'var(--font-mono)',
@@ -309,22 +309,50 @@ export default function HomeAssistantCard() {
         {/* ── LIGHTS ── */}
         {activeSection === 'lights' && (
           <div>
-            <div style={{
-              fontSize: 11, fontFamily: 'var(--font-mono)',
-              color: 'var(--text-tertiary)', textTransform: 'uppercase',
-              letterSpacing: '0.08em', marginBottom: 10,
-            }}>
-              Rock lights
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              {[
-                { id: 'light.white_rock_lights',            label: 'White',  color: '#F0EDE4' },
-                { id: 'light.light_blue_rock_lights',       label: 'Blue',   color: '#60A5FA' },
-                { id: 'light.pink_rock_lights',             label: 'Pink',   color: '#F472B6' },
-                { id: 'light.yellow_rock_light',            label: 'Yellow', color: '#FBBF24' },
-                { id: 'light.rock_lights_red_light_switch', label: 'Red',    color: '#F87171' },
-                { id: 'light.rock_lights_green_light_switch', label: 'Green', color: '#4A7C3F' },
-              ].map(light => {
+            {(() => {
+              const rockLights = [
+                { id: 'light.white_rock_lights',              label: 'White',  color: '#F0EDE4' },
+                { id: 'light.light_blue_rock_lights',         label: 'Blue',   color: '#60A5FA' },
+                { id: 'light.pink_rock_lights',               label: 'Pink',   color: '#F472B6' },
+                { id: 'light.yellow_rock_light',              label: 'Yellow', color: '#FBBF24' },
+                { id: 'light.rock_lights_red_light_switch',   label: 'Red',    color: '#F87171' },
+                { id: 'light.rock_lights_green_light_switch', label: 'Green',  color: '#4A7C3F' },
+              ]
+              const onCount = rockLights.filter(l => ha.isOn(l.id) === true).length
+              return (
+                <>
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '10px 14px', marginBottom: 12,
+                    background: 'var(--bg-secondary)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 10,
+                  }}>
+                    <div style={{
+                      width: 8, height: 8, borderRadius: '50%',
+                      background: onCount > 0 ? '#f59e0b' : 'var(--text-tertiary)',
+                      flexShrink: 0,
+                    }} />
+                    <div style={{
+                      fontSize: 13, fontWeight: 500,
+                      color: 'var(--text-primary)', fontFamily: 'var(--font-body)',
+                    }}>
+                      {onCount === 0
+                        ? 'All rock lights off'
+                        : onCount === 1
+                        ? '1 light on'
+                        : `${onCount} of ${rockLights.length} lights on`}
+                    </div>
+                  </div>
+                  <div style={{
+                    fontSize: 11, fontFamily: 'var(--font-mono)',
+                    color: 'var(--text-tertiary)', textTransform: 'uppercase',
+                    letterSpacing: '0.08em', marginBottom: 10,
+                  }}>
+                    Rock lights
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                    {rockLights.map(light => {
                 const on = ha.isOn(light.id)
                 return (
                   <button
@@ -352,21 +380,57 @@ export default function HomeAssistantCard() {
                       {light.label}
                     </div>
                   </button>
-                )
-              })}
-            </div>
+                    )
+                  })}
+                  </div>
+                </>
+              )
+            })()}
           </div>
         )}
 
         {/* ── MEDIA ── */}
         {activeSection === 'media' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {['media_player.chomp_stereo', 'media_player.spotify_dan_brown'].map(id => {
+            {(() => {
+              const mediaPlayers = [
+                { id: 'media_player.chomp_stereo',      label: 'Stereo'  },
+                { id: 'media_player.spotify_dan_brown', label: 'Spotify' },
+              ]
+              const playingCount = mediaPlayers.filter(p => ha.getState(p.id) === 'playing').length
+              return (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '10px 14px', marginBottom: 4,
+                  background: 'var(--bg-secondary)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 10,
+                }}>
+                  <div style={{
+                    width: 8, height: 8, borderRadius: '50%',
+                    background: playingCount > 0 ? '#22c55e' : 'var(--text-tertiary)',
+                    flexShrink: 0,
+                  }} />
+                  <div style={{
+                    fontSize: 13, fontWeight: 500,
+                    color: 'var(--text-primary)', fontFamily: 'var(--font-body)',
+                  }}>
+                    {playingCount === 0
+                      ? 'Nothing playing'
+                      : playingCount === 1
+                      ? `Playing on ${mediaPlayers.find(p => ha.getState(p.id) === 'playing')?.label ?? '1 source'}`
+                      : `Playing on ${playingCount} sources`}
+                  </div>
+                </div>
+              )
+            })()}
+            {[
+              { id: 'media_player.chomp_stereo',      displayName: 'Chomp Stereo' },
+              { id: 'media_player.spotify_dan_brown', displayName: 'Spotify'      },
+            ].map(({ id, displayName }) => {
               const state = ha.getState(id)
               const attrs = ha.entities[id]?.attributes
               const isPlaying = state === 'playing'
-              const name = attrs?.friendly_name ||
-                id.split('.')[1].replace(/_/g, ' ')
 
               return (
                 <div key={id} style={{
@@ -378,7 +442,7 @@ export default function HomeAssistantCard() {
                     marginBottom: attrs?.media_title ? 8 : 0,
                   }}>
                     <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', fontFamily: 'var(--font-body)' }}>
-                      {name}
+                      {displayName}
                     </div>
                     <div style={{
                       fontSize: 10, fontFamily: 'var(--font-mono)',
@@ -444,9 +508,10 @@ export default function HomeAssistantCard() {
                         onClick={() => ha.callService('media_player', ctrl.service, id)}
                         style={{
                           width: ctrl.primary ? 40 : 32, height: ctrl.primary ? 40 : 32,
-                          borderRadius: '50%', border: '1px solid var(--border)',
-                          background: ctrl.primary ? 'var(--accent)' : 'var(--bg-card)',
-                          color: ctrl.primary ? '#fff' : 'var(--text-secondary)',
+                          borderRadius: '50%',
+                          border: ctrl.primary && isPlaying ? 'none' : '1px solid var(--border)',
+                          background: ctrl.primary ? (isPlaying ? 'var(--accent)' : 'transparent') : 'var(--bg-card)',
+                          color: ctrl.primary && isPlaying ? '#fff' : 'var(--text-secondary)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           cursor: 'pointer',
                         }}
@@ -531,7 +596,7 @@ function SysStatsModal({ ha, onClose }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
             <IconCpu style={{ width: 18, height: 18, color: 'var(--accent)' }} />
             <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-body)' }}>
-              chompOS System
+              ChompOS System
             </div>
           </div>
 

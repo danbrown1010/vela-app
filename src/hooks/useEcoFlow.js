@@ -84,5 +84,11 @@ export function useEcoFlow(serialNumber) {
     return () => clearInterval(interval)
   }, [fetchData])
 
+  useEffect(() => {
+    const handler = () => fetchData()
+    window.addEventListener('ecoflow:refresh-all', handler)
+    return () => window.removeEventListener('ecoflow:refresh-all', handler)
+  }, [fetchData])
+
   return { data, loading, error, lastUpdated, refetch: fetchData }
 }

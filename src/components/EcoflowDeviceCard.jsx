@@ -1,6 +1,5 @@
 import { useEcoFlow } from '../hooks/useEcoFlow'
 import { useAppStore } from '../store/index'
-import { IconRefresh } from './icons'
 
 /**
  * Compact card for a single EcoFlow device. Replaces the chip+expanded-card
@@ -8,7 +7,7 @@ import { IconRefresh } from './icons'
  */
 export function EcoflowDeviceCard({ device, onShowInfo }) {
   const { accent } = useAppStore()
-  const { data, loading, error, lastUpdated, refetch } = useEcoFlow(device.sn)
+  const { data, loading, error, lastUpdated } = useEcoFlow(device.sn)
 
   const hasBattery = device.capacity > 0
   const soc = data?.soc
@@ -95,13 +94,6 @@ export function EcoflowDeviceCard({ device, onShowInfo }) {
               style={iconBtnStyle}
             >i</button>
           )}
-          <button
-            onClick={refetch}
-            aria-label="Refresh"
-            style={iconBtnStyle}
-          >
-            <IconRefresh style={{ width: 12, height: 12, color: 'var(--text-secondary)' }} />
-          </button>
         </div>
       </div>
 
@@ -134,17 +126,13 @@ export function EcoflowDeviceCard({ device, onShowInfo }) {
 
       {lastUpdated && (
         <div style={{
-          fontSize: 10, fontFamily: 'var(--font-mono)',
-          color: 'var(--text-tertiary)', marginTop: 6,
-          display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8,
+          fontSize: 9, fontFamily: 'var(--font-mono)',
+          color: 'var(--text-tertiary)',
+          opacity: 0.5,
+          marginTop: 6, textAlign: 'right',
+          letterSpacing: '0.06em',
         }}>
-          <span>Updated {lastUpdated.toLocaleTimeString()}</span>
-          <button onClick={refetch} aria-label="Refresh" style={{
-            width: 22, height: 22, borderRadius: 5,
-            border: '1px solid var(--border)', background: 'transparent',
-            color: 'var(--text-tertiary)', fontSize: 11,
-            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>↺</button>
+          {relativeTime(lastUpdated)}
         </div>
       )}
     </div>
@@ -167,4 +155,13 @@ function formatRemain(min) {
   const m = min % 60
   if (h > 0) return `${h}h ${m}m left`
   return `${m}m left`
+}
+
+function relativeTime(date) {
+  if (!date) return ''
+  const secs = Math.floor((Date.now() - date.getTime()) / 1000)
+  if (secs < 10)  return 'just now'
+  if (secs < 60)  return `${secs}s ago`
+  if (secs < 3600) return `${Math.floor(secs / 60)}m ago`
+  return `${Math.floor(secs / 3600)}h ago`
 }
