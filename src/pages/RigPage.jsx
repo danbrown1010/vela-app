@@ -10,6 +10,7 @@ import { CommunicationsSection } from './CommunicationsSection'
 import { EcoflowDeviceCard } from '../components/EcoflowDeviceCard'
 import { useEcoflowConfig } from '../hooks/useEcoflowConfig'
 import { useBatteries } from '../hooks/useBatteries'
+import { useEcoFlow } from '../hooks/useEcoFlow'
 
 // ─── Seed data ────────────────────────────────────────────────────────────────
 
@@ -479,42 +480,20 @@ function TempZones({ haSensors = [] }) {
 // ─── EcoFlow ──────────────────────────────────────────────────────────────────
 
 function EcoflowSection({ onShowInfo }) {
-  const { user } = useAppStore()
-  const { visibleDevices, loaded } = useEcoflowConfig(user?.id)
-  const { accent } = useAppStore()
+  const { user, accent } = useAppStore()
+  const { featuredDevice, otherDevices, visibleDevices, loaded } = useEcoflowConfig(user?.id)
 
   if (!loaded) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <div style={{
-          fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700,
-          color: 'var(--text-tertiary)',
-          textTransform: 'uppercase', letterSpacing: '0.1em',
-        }}>
-          EcoFlow
-        </div>
-        <div style={{
-          background: 'var(--bg-card)', border: '1px solid var(--border)',
-          borderRadius: 14, padding: 16, fontSize: 12,
-          color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)',
-          textAlign: 'center',
-        }}>
-          Loading…
-        </div>
-      </div>
+      <SectionShell title="EcoFlow">
+        <div style={emptyMsgStyle}>Loading…</div>
+      </SectionShell>
     )
   }
 
   if (visibleDevices.length === 0) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <div style={{
-          fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700,
-          color: 'var(--text-tertiary)',
-          textTransform: 'uppercase', letterSpacing: '0.1em',
-        }}>
-          EcoFlow
-        </div>
+      <SectionShell title="EcoFlow">
         <div style={{
           background: 'var(--bg-card)', border: '1px solid var(--border)',
           borderRadius: 14, padding: 20, textAlign: 'center',
@@ -549,30 +528,159 @@ function EcoflowSection({ onShowInfo }) {
             Configure in Settings
           </button>
         </div>
-      </div>
+      </SectionShell>
     )
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <div style={{
-        fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700,
-        color: 'var(--text-tertiary)',
-        textTransform: 'uppercase', letterSpacing: '0.1em',
-      }}>
-        EcoFlow
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {visibleDevices.map((device) => (
-          <EcoflowDeviceCard
-            key={device.id}
-            device={device}
-            onShowInfo={onShowInfo}
-          />
-        ))}
-      </div>
+      <SectionHeader title="EcoFlow" />
+
+      {/* Featured device — full card */}
+      {featuredDevice && (
+        <EcoflowDeviceCard
+          device={featuredDevice}
+          onShowInfo={onShowInfo}
+        />
+      )}
+
+      {/* Other devices — compact rows */}
+      {otherDevices.length > 0 && (
+        <>
+          <SectionHeader title="Other Devices" style={{ marginTop: 4 }} />
+          <div style={{
+            background: 'var(--bg-card)', border: '1px solid var(--border)',
+            borderRadius: 14, overflow: 'hidden',
+          }}>
+            {otherDevices.map((device, idx) => (
+              <EcoflowCompactRow
+                key={device.id}
+                device={device}
+                onTap={() => onShowInfo?.({ device })}
+                showDivider={idx < otherDevices.length - 1}
+              />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   )
+}
+
+// ─── Compact row for "Other Devices" list ────────────────────────────────────
+
+function EcoflowCompactRow({ device, onTap, showDivider }) {
+  const { data, loading, error } = useEcoFlow(device.sn)
+  const { accent } = useAppStore()
+
+  const hasBattery = device.capacity > 0
+  const soc = data?.soc
+  const inW = data?.totalInputWatts ?? 0
+  const outW = data?.totalOutputWatts ?? 0
+  const netW = inW - outW
+
+  const dotColor = loading
+    ? 'var(--text-tertiary)'
+    : error
+    ? '#ef4444'
+    : netW > 0
+    ? '#22c55e'
+    : netW < 0
+    ? hasBattery && soc != null && soc < 20 ? '#ef4444' : '#f59e0b'
+    : 'var(--text-tertiary)'
+
+  const statusText = error
+    ? 'Offline'
+    : loading
+    ? '…'
+    : netW === 0
+    ? 'Idle'
+    : `↓${inW}W ↑${outW}W`
+
+  return (
+    <button
+      onClick={onTap}
+      style={{
+        width: '100%',
+        display: 'flex', alignItems: 'center', gap: 10,
+        padding: '12px 14px',
+        background: 'transparent', border: 'none',
+        borderBottom: showDivider ? '1px solid var(--border)' : 'none',
+        cursor: 'pointer', textAlign: 'left',
+      }}
+      className="active:opacity-70 transition-opacity"
+    >
+      <div style={{
+        width: 8, height: 8, borderRadius: '50%',
+        background: dotColor, flexShrink: 0,
+      }} />
+
+      <div style={{
+        flex: 1, minWidth: 0,
+        fontSize: 14, fontWeight: 600,
+        color: 'var(--text-primary)', fontFamily: 'var(--font-body)',
+        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+      }}>
+        {device.name}
+      </div>
+
+      {hasBattery && soc != null && (
+        <div style={{
+          fontSize: 14, fontWeight: 700,
+          color: accent, fontFamily: 'var(--font-body)',
+          flexShrink: 0, minWidth: 42, textAlign: 'right',
+        }}>
+          {soc}%
+        </div>
+      )}
+
+      <div style={{
+        fontSize: 11, fontFamily: 'var(--font-mono)',
+        color: 'var(--text-secondary)',
+        flexShrink: 0, minWidth: 80, textAlign: 'right',
+      }}>
+        {statusText}
+      </div>
+
+      <div style={{
+        color: 'var(--text-tertiary)', fontSize: 16,
+        flexShrink: 0, marginLeft: 2,
+      }}>
+        ›
+      </div>
+    </button>
+  )
+}
+
+// ─── Section header / shell helpers ──────────────────────────────────────────
+
+function SectionHeader({ title, style }) {
+  return (
+    <div style={{
+      fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700,
+      color: 'var(--text-tertiary)',
+      textTransform: 'uppercase', letterSpacing: '0.1em',
+      ...style,
+    }}>
+      {title}
+    </div>
+  )
+}
+
+function SectionShell({ title, children }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <SectionHeader title={title} />
+      {children}
+    </div>
+  )
+}
+
+const emptyMsgStyle = {
+  background: 'var(--bg-card)', border: '1px solid var(--border)',
+  borderRadius: 14, padding: 16, fontSize: 12,
+  color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)',
+  textAlign: 'center',
 }
 
 // ─── Batteries ────────────────────────────────────────────────────────────────

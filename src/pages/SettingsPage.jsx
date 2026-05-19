@@ -763,7 +763,15 @@ function Toggle({ on, onToggle }) {
 // ─── EcoFlow device picker sheet ──────────────────────────────────────────────
 
 function EcoflowDevicePickerSheet({ accent, userId, onClose }) {
-  const { allDevices, visibleDeviceIds, toggle, loaded } = useEcoflowConfig(userId)
+  const {
+    allDevices,
+    visibleDeviceIds,
+    featuredDeviceId,
+    featuredDevice,
+    toggle,
+    setFeatured,
+    loaded,
+  } = useEcoflowConfig(userId)
 
   return (
     <div
@@ -800,7 +808,7 @@ function EcoflowDevicePickerSheet({ accent, userId, onClose }) {
           fontSize: 13, color: 'var(--text-secondary)',
           fontFamily: 'var(--font-body)', marginBottom: 20, lineHeight: 1.5,
         }}>
-          Choose which devices to show in the Power section of the Rig page.
+          Check devices to show in the Power section. Tap the radio dot to choose which one is featured.
         </div>
 
         {!loaded && (
@@ -814,52 +822,103 @@ function EcoflowDevicePickerSheet({ accent, userId, onClose }) {
 
         {loaded && allDevices.map((device) => {
           const checked = visibleDeviceIds.includes(device.id)
+          const isFeatured = featuredDeviceId === device.id
+
           return (
-            <button
+            <div
               key={device.id}
-              onClick={() => toggle(device.id)}
               style={{
-                width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+                display: 'flex', alignItems: 'center', gap: 12,
                 padding: '12px 14px', marginBottom: 8,
                 background: 'var(--bg-secondary)',
                 borderRadius: 10,
                 border: `1px solid ${checked ? `${accent}99` : 'var(--border)'}`,
-                cursor: 'pointer', textAlign: 'left',
                 transition: 'border-color 0.15s, background 0.15s',
               }}
-              className="active:opacity-80 transition-opacity"
             >
-              <div style={{
-                width: 20, height: 20, borderRadius: 6, flexShrink: 0,
-                border: `1.5px solid ${checked ? accent : 'var(--border)'}`,
-                background: checked ? accent : 'transparent',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'all 0.15s',
-              }}>
+              {/* Checkbox — toggles visibility */}
+              <button
+                onClick={() => toggle(device.id)}
+                aria-label={checked ? `Hide ${device.name}` : `Show ${device.name}`}
+                style={{
+                  width: 22, height: 22, borderRadius: 6, flexShrink: 0,
+                  border: `1.5px solid ${checked ? accent : 'var(--border)'}`,
+                  background: checked ? accent : 'transparent',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', padding: 0,
+                  transition: 'all 0.15s',
+                }}
+                className="active:opacity-70 transition-opacity"
+              >
                 {checked && (
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
                        stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
                 )}
-              </div>
+              </button>
 
+              {/* Featured radio — only enabled when checked */}
+              <button
+                onClick={() => { if (checked) setFeatured(device.id) }}
+                disabled={!checked}
+                aria-label={isFeatured ? `${device.name} is featured` : `Make ${device.name} featured`}
+                title={checked ? (isFeatured ? 'Featured device' : 'Make featured') : 'Enable device first'}
+                style={{
+                  width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
+                  border: `1.5px solid ${isFeatured ? accent : 'var(--border)'}`,
+                  background: 'transparent',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: checked ? 'pointer' : 'not-allowed',
+                  opacity: checked ? 1 : 0.35,
+                  padding: 0,
+                  transition: 'all 0.15s',
+                }}
+                className="active:opacity-70 transition-opacity"
+              >
+                {isFeatured && (
+                  <div style={{
+                    width: 10, height: 10, borderRadius: '50%',
+                    background: accent,
+                  }} />
+                )}
+              </button>
+
+              {/* Label */}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{
                   fontSize: 14, fontWeight: 600,
                   color: 'var(--text-primary)', fontFamily: 'var(--font-body)',
+                  display: 'flex', alignItems: 'center', gap: 6,
                 }}>
-                  {device.name}
+                  <span style={{
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>
+                    {device.name}
+                  </span>
+                  {isFeatured && checked && (
+                    <span style={{
+                      fontSize: 9, fontFamily: 'var(--font-mono)',
+                      fontWeight: 700, letterSpacing: '0.08em',
+                      color: accent,
+                      border: `1px solid ${accent}66`,
+                      padding: '1px 5px', borderRadius: 4,
+                      flexShrink: 0,
+                    }}>
+                      FEATURED
+                    </span>
+                  )}
                 </div>
                 <div style={{
                   fontSize: 11, color: 'var(--text-tertiary)',
                   fontFamily: 'var(--font-body)', marginTop: 2,
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                 }}>
                   {device.model}
                   {device.capacity > 0 ? ` · ${device.capacity.toLocaleString()} Wh` : ''}
                 </div>
               </div>
-            </button>
+            </div>
           )
         })}
 
@@ -868,6 +927,7 @@ function EcoflowDevicePickerSheet({ accent, userId, onClose }) {
           color: 'var(--text-tertiary)', textAlign: 'center', marginTop: 12,
         }}>
           {visibleDeviceIds.length} of {allDevices.length} selected
+          {featuredDevice ? ` · ${featuredDevice.name} featured` : ''}
         </div>
       </div>
     </div>
