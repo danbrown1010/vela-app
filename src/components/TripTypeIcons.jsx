@@ -1,4 +1,7 @@
-export const TRIP_TYPES = ['Overlanding', 'Photography', 'Fishing', 'Skiing', 'Camping', 'Hiking']
+export const TRIP_TYPES = [
+  'Overlanding', 'Photography', 'Fishing', 'Hunting',
+  'Skiing', 'Camping', 'Hiking', 'Festival', 'Day Trip',
+]
 
 const ICONS = {
   Overlanding: (
@@ -43,6 +46,35 @@ const ICONS = {
       <path d="M12 11l-1-4 4 1"/>
     </svg>
   ),
+  Hunting: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="8"/>
+      <line x1="12" y1="1" x2="12" y2="5"/>
+      <line x1="12" y1="19" x2="12" y2="23"/>
+      <line x1="1" y1="12" x2="5" y2="12"/>
+      <line x1="19" y1="12" x2="23" y2="12"/>
+    </svg>
+  ),
+  Festival: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 18V5l12-2v13"/>
+      <circle cx="6" cy="18" r="3"/>
+      <circle cx="18" cy="16" r="3"/>
+    </svg>
+  ),
+  'Day Trip': (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="4"/>
+      <line x1="12" y1="2" x2="12" y2="6"/>
+      <line x1="12" y1="18" x2="12" y2="22"/>
+      <line x1="2" y1="12" x2="6" y2="12"/>
+      <line x1="18" y1="12" x2="22" y2="12"/>
+      <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/>
+      <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
+      <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/>
+      <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>
+    </svg>
+  ),
 }
 
 const COLORS = {
@@ -52,6 +84,9 @@ const COLORS = {
   Skiing:      '#60a5fa',
   Camping:     '#f59e0b',
   Hiking:      '#84cc16',
+  Hunting:    '#92400e',
+  Festival:   '#a855f7',
+  'Day Trip': '#06b6d4',
 }
 
 export function TypeBadge({ type, size = 'sm', showLabel = true }) {

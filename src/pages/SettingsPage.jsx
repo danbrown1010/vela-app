@@ -361,8 +361,9 @@ export default function SettingsPage({ onBack, onNavigateTab, onClose, embedded 
           <div className="px-4 py-3 flex flex-col gap-3">
             <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Theme</p>
             <div className="flex gap-3">
-              <ThemeCard label="Dark"  selected={theme === 'dark'}  onSelect={() => setTheme('dark')}  preview={<DarkPreview />}  />
-              <ThemeCard label="Light" selected={theme === 'light'} onSelect={() => setTheme('light')} preview={<LightPreview />} />
+              <ThemeCard label="Evergreen" selected={theme === 'evergreen'} onSelect={() => setTheme('evergreen')} preview={<DarkPreview />}    />
+              <ThemeCard label="Slate"     selected={theme === 'slate'}     onSelect={() => setTheme('slate')}     preview={<SlatePreview />}   />
+              <ThemeCard label="Parchment" selected={theme === 'parchment'} onSelect={() => setTheme('parchment')} preview={<LightPreview />}   />
             </div>
           </div>
           <div className="px-4 py-3 flex items-center justify-between">
@@ -502,6 +503,8 @@ export default function SettingsPage({ onBack, onNavigateTab, onClose, embedded 
 
 function ThemeCard({ label, selected, onSelect, preview }) {
   const { accent } = useAppStore()
+  const labelBg    = label === 'Parchment' ? '#E8E4D9' : label === 'Slate' ? '#1a1d22' : '#1C2117'
+  const labelColor = label === 'Parchment' ? '#1C2117' : '#F0EDE4'
   return (
     <button
       onClick={onSelect}
@@ -511,9 +514,9 @@ function ThemeCard({ label, selected, onSelect, preview }) {
       {preview}
       <div
         className="flex items-center justify-between px-3 py-2"
-        style={{ background: label === 'Light' ? '#E8E4D9' : '#1C2117' }}
+        style={{ background: labelBg }}
       >
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', color: label === 'Light' ? '#1C2117' : '#F0EDE4' }}>{label}</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', color: labelColor }}>{label}</span>
         {selected && (
           <IconCheck style={{ width: 14, height: 14, color: accent }} />
         )}
@@ -530,6 +533,19 @@ function DarkPreview() {
       <div className="flex gap-1.5 mt-0.5">
         <div className="h-5 w-9 rounded" style={{ background: '#C4521A' }} />
         <div className="h-5 flex-1 rounded border" style={{ background: '#2A3323', borderColor: '#3A4A32' }} />
+      </div>
+    </div>
+  )
+}
+
+function SlatePreview() {
+  return (
+    <div className="h-16 p-2 flex flex-col gap-1.5" style={{ background: '#1a1d22' }}>
+      <div className="h-2 rounded" style={{ background: '#353a42', width: '70%' }} />
+      <div className="h-1.5 rounded" style={{ background: '#20242a', width: '45%' }} />
+      <div className="flex gap-1.5 mt-0.5">
+        <div className="h-5 w-9 rounded" style={{ background: '#C4521A' }} />
+        <div className="h-5 flex-1 rounded border" style={{ background: '#262a31', borderColor: '#353a42' }} />
       </div>
     </div>
   )

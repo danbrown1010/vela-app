@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useCommunications } from '../hooks/useCommunications'
 import { useAppStore } from '../store/index'
 
@@ -39,6 +40,14 @@ export function CommunicationsSection() {
   const slateAdminUrl = 'http://192.168.8.1'
   const starlinkAppUrl = 'https://www.starlink.com/account/home'
 
+  const cpuSev    = severityFor(cpuTempF,  THRESHOLDS.cpuTempF)
+  const memorySev = severityFor(memoryPct, THRESHOLDS.memoryPct)
+  const flashSev  = severityFor(flashPct,  THRESHOLDS.flashPct)
+  const systemHasWarning  = [cpuSev, memorySev, flashSev].some(s => s !== 'normal')
+  const systemHasCritical = [cpuSev, memorySev, flashSev].some(s => s === 'critical')
+
+  const [systemSheetOpen, setSystemSheetOpen] = useState(false)
+
   if (!isConfigured) {
     return (
       <Card title="Communications">
@@ -74,6 +83,7 @@ export function CommunicationsSection() {
   }
 
   return (
+    <>
     <Card title="Communications">
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
         <div style={{
@@ -86,7 +96,13 @@ export function CommunicationsSection() {
             fontSize: 14, fontWeight: 600,
             color: 'var(--text-primary)', fontFamily: 'var(--font-body)',
           }}>
-            Chomp Wifi {wifiOn ? 'online' : 'offline'}
+            Chomp Wifi{' '}
+            <span style={{
+              fontWeight: 400,
+              color: wifiOn ? 'var(--text-secondary)' : '#ef4444',
+            }}>
+              {wifiOn ? 'online' : 'offline'}
+            </span>
           </div>
           {uptimeIso && (
             <div style={{
@@ -97,24 +113,30 @@ export function CommunicationsSection() {
             </div>
           )}
         </div>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 14 }}>
-        <Metric
-          label="CPU"
-          value={cpuTempF != null ? `${Math.round(cpuTempF)}°F` : '—'}
-          severity={severityFor(cpuTempF, THRESHOLDS.cpuTempF)}
-        />
-        <Metric
-          label="Memory"
-          value={memoryPct != null ? `${memoryPct.toFixed(0)}%` : '—'}
-          severity={severityFor(memoryPct, THRESHOLDS.memoryPct)}
-        />
-        <Metric
-          label="Flash"
-          value={flashPct != null ? `${flashPct.toFixed(0)}%` : '—'}
-          severity={severityFor(flashPct, THRESHOLDS.flashPct)}
-        />
+        <button
+          onClick={() => setSystemSheetOpen(true)}
+          aria-label="System info"
+          style={{
+            width: 32, height: 32, borderRadius: 8,
+            border: `1px solid ${
+              systemHasCritical ? '#ef444466' :
+              systemHasWarning  ? '#f59e0b66' :
+                                   'var(--border)'
+            }`,
+            background: 'transparent',
+            color: systemHasCritical ? '#ef4444' :
+                   systemHasWarning  ? '#f59e0b' :
+                                        'var(--text-secondary)',
+            fontSize: 13, fontWeight: 700,
+            fontFamily: 'var(--font-mono)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', flexShrink: 0,
+            transition: 'border-color 0.2s, color 0.2s',
+          }}
+          className="active:opacity-70 transition-opacity"
+        >
+          i
+        </button>
       </div>
 
       {(speedtestDown != null || speedtestUp != null || speedtestPing != null) && (
@@ -137,9 +159,20 @@ export function CommunicationsSection() {
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-        <LinkButton href={slateAdminUrl} label="Slate AX admin" />
-        <LinkButton href={starlinkAppUrl} label="Starlink app" />
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 20,
+        marginTop: 14,
+        fontSize: 11, fontFamily: 'var(--font-mono)',
+        letterSpacing: '0.06em',
+      }}>
+        <a href={slateAdminUrl} target="_blank" rel="noreferrer"
+          style={{ color: 'var(--text-tertiary)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+          className="hover:opacity-80 active:opacity-60 transition-opacity"
+        >Slate AX admin ↗</a>
+        <a href={starlinkAppUrl} target="_blank" rel="noreferrer"
+          style={{ color: 'var(--text-tertiary)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+          className="hover:opacity-80 active:opacity-60 transition-opacity"
+        >Starlink app ↗</a>
       </div>
 
       {lastUpdated && (
@@ -154,6 +187,20 @@ export function CommunicationsSection() {
         </div>
       )}
     </Card>
+
+    {systemSheetOpen && (
+      <SystemInfoSheet
+        onClose={() => setSystemSheetOpen(false)}
+        cpuTempF={cpuTempF}
+        memoryPct={memoryPct}
+        flashPct={flashPct}
+        cpuSev={cpuSev}
+        memorySev={memorySev}
+        flashSev={flashSev}
+        uptimeIso={uptimeIso}
+      />
+    )}
+    </>
   )
 }
 
@@ -268,32 +315,76 @@ function Metric({ label, value, severity = 'normal' }) {
   )
 }
 
-function LinkButton({ href, label }) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer"
-      style={{
-        flex: 1, padding: '9px 12px', borderRadius: 8,
-        border: '1px solid var(--border)', background: 'transparent',
-        color: 'var(--text-primary)', fontSize: 12,
-        fontFamily: 'var(--font-body)', fontWeight: 500, cursor: 'pointer',
-        textAlign: 'center', textDecoration: 'none',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-      }}
-      className="active:opacity-70 transition-opacity"
-    >
-      {label} ↗
-    </a>
-  )
-}
 
 const footerRefreshStyle = {
   width: 22, height: 22, borderRadius: 5,
   border: '1px solid var(--border)', background: 'transparent',
   color: 'var(--text-tertiary)', fontSize: 11,
   cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+}
+
+function SystemInfoSheet({ onClose, cpuTempF, memoryPct, flashPct, cpuSev, memorySev, flashSev, uptimeIso }) {
+  const rows = [
+    { label: 'CPU Temperature', value: cpuTempF  != null ? `${Math.round(cpuTempF)}°F`  : '—', severity: cpuSev,    detail: 'Throttles around 160°F' },
+    { label: 'Memory',          value: memoryPct != null ? `${memoryPct.toFixed(0)}%`    : '—', severity: memorySev, detail: 'Slate AX has 512 MB DDR' },
+    { label: 'Flash',           value: flashPct  != null ? `${flashPct.toFixed(0)}%`     : '—', severity: flashSev,  detail: 'Long-term wear concern, not urgent' },
+  ]
+
+  return (
+    <div
+      onClick={onClose}
+      style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-end' }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          width: '100%', maxHeight: '85vh', overflowY: 'auto',
+          background: 'var(--bg-card)',
+          borderRadius: '20px 20px 0 0',
+          border: '1px solid var(--border)', borderBottom: 'none',
+          padding: '24px 20px',
+          paddingBottom: 'calc(24px + env(safe-area-inset-bottom))',
+        }}
+      >
+        <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--border)', margin: '0 auto 20px' }} />
+
+        <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-body)', marginBottom: 4 }}>
+          System Status
+        </div>
+        <div style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', marginBottom: 20, lineHeight: 1.5 }}>
+          GL.iNet Slate AX (AXT1800)
+        </div>
+
+        {rows.map(row => (
+          <div key={row.label} style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            padding: '14px 16px', marginBottom: 8,
+            background: 'var(--bg-secondary)', borderRadius: 10, border: '1px solid var(--border)',
+          }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: SEVERITY_DOT_COLORS[row.severity], flexShrink: 0 }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'var(--font-body)' }}>{row.label}</div>
+              <div style={{ fontSize: 11, color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)', marginTop: 2 }}>{row.detail}</div>
+            </div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: SEVERITY_COLORS[row.severity], fontFamily: 'var(--font-body)', flexShrink: 0 }}>
+              {row.value}
+            </div>
+          </div>
+        ))}
+
+        {uptimeIso && (
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '14px 16px', marginTop: 12,
+            background: 'var(--bg-secondary)', borderRadius: 10, border: '1px solid var(--border)',
+          }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'var(--font-body)' }}>Uptime</div>
+            <div style={{ fontSize: 14, fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>{formatUptime(uptimeIso)}</div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
 }
 
 function formatUptime(iso) {

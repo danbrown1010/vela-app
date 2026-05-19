@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useAppStore } from '../store/index'
 import { getDisplayName, getInitials } from '../utils/userHelpers'
 import { TypeSelector, TypeBadge } from '../components/TripTypeIcons'
@@ -28,7 +28,10 @@ const INITIAL_FORM = {
 
 export default function CreateTripPage({ onClose, onCreated }) {
   const [step, setStep]       = useState(1)
-  const [form, setForm]       = useState(INITIAL_FORM)
+  const [form, setForm]       = useState(() => ({
+    ...INITIAL_FORM,
+    departureDate: new Date().toISOString().slice(0, 10),
+  }))
   const [creating, setCreating] = useState(false)
   const [error, setError]     = useState(null)
   const { createTrip } = useAppStore()
@@ -47,8 +50,8 @@ export default function CreateTripPage({ onClose, onCreated }) {
         name:          form.name || 'New Trip',
         type:          form.types[0] ?? 'Overlanding',
         types:         form.types,
-        departureDate: form.departureDate || '2026-06-01',
-        returnDate:    form.returnDate    || '2026-06-05',
+        departureDate: form.departureDate || new Date().toISOString().slice(0, 10),
+        returnDate:    form.returnDate    || null,
         region:        form.region,
       })
       onCreated()
@@ -155,15 +158,17 @@ function Step1Basics({ form, update }) {
 
       <Field label="Dates">
         <div className="flex gap-3">
-          <DateCard
+          <DateField
             label="Depart"
             value={form.departureDate}
             onChange={v => update('departureDate', v)}
           />
-          <DateCard
+          <DateField
             label="Return"
             value={form.returnDate}
             onChange={v => update('returnDate', v)}
+            placeholder="Select date"
+            minDate={form.departureDate}
           />
         </div>
       </Field>
@@ -185,16 +190,43 @@ function Step1Basics({ form, update }) {
   )
 }
 
-function DateCard({ label, value, onChange }) {
+function DateField({ label, value, onChange, placeholder = 'Select date', minDate }) {
+  const inputRef = useRef(null)
+  const displayDate = value
+    ? (() => { const [y, m, d] = value.split('-').map(Number); return new Date(y, m - 1, d) })()
+    : null
+  const formatted = displayDate
+    ? displayDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    : placeholder
+
   return (
     <div className="flex-1 bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-3 py-3">
       <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>{label}</p>
+      <button
+        type="button"
+        onClick={() => {
+          if (inputRef.current?.showPicker) {
+            inputRef.current.showPicker()
+          } else {
+            inputRef.current?.click()
+          }
+        }}
+        style={{
+          width: '100%', background: 'transparent', border: 'none', padding: 0,
+          fontSize: 15, fontWeight: 600,
+          color: value ? 'var(--text-primary)' : 'var(--text-tertiary)',
+          fontFamily: 'var(--font-body)', textAlign: 'left', cursor: 'pointer',
+        }}
+      >
+        {formatted}
+      </button>
       <input
+        ref={inputRef}
         type="date"
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        className="w-full text-[var(--text-primary)] text-sm bg-transparent outline-none"
-        style={{ colorScheme: 'dark' }}
+        value={value || ''}
+        min={minDate || undefined}
+        onChange={e => onChange(e.target.value || '')}
+        style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', width: 0, height: 0 }}
       />
     </div>
   )
@@ -411,7 +443,7 @@ function Step4Review({ form, onEdit, onCreate, creating, error }) {
           </div>
         )}
         <div className="divide-y divide-[var(--border)]">
-          <ReviewRow label="Dates"     value={form.departureDate && form.returnDate ? `${fmtDate(form.departureDate)} → ${fmtDate(form.returnDate)}` : '—'} />
+          <ReviewRow label="Dates"     value={form.departureDate ? (form.returnDate ? `${fmtDate(form.departureDate)} → ${fmtDate(form.returnDate)}` : fmtDate(form.departureDate)) : '—'} />
           <ReviewRow label="Region"    value={form.region || '—'} />
           <ReviewRow label="Vehicle"   value="2014 Jeep JKU · Chomp" />
           <ReviewRow label="People"    value={`${displayName}, Emily Brown`} />
@@ -498,5 +530,5 @@ function Toggle({ on, onToggle }) {
 function fmtDate(iso) {
   if (!iso) return '—'
   const [y, m, d] = iso.split('-').map(Number)
-  return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
 }

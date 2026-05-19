@@ -92,8 +92,8 @@ export function AppProvider({ children, user = null, profile = null, signOut = (
   const [accent, setAccentState]  = useState(() => localStorage.getItem('vela-accent') || '#f97316')
   const [theme, setThemeState]    = useState(() => {
     const stored = localStorage.getItem('vela-theme')
-    if (!stored) localStorage.setItem('vela-theme', 'dark')
-    return stored || 'dark'
+    if (!stored) localStorage.setItem('vela-theme', 'evergreen')
+    return stored || 'evergreen'
   })
   const [dataBust, setDataBust]   = useState(0)
 
@@ -296,7 +296,7 @@ export function AppProvider({ children, user = null, profile = null, signOut = (
   const setTheme = useCallback((t) => {
     setThemeState(t)
     localStorage.setItem('vela-theme', t)
-    document.documentElement.classList.remove('dark', 'light')
+    document.documentElement.classList.remove('evergreen', 'parchment')
     document.documentElement.classList.add(t)
   }, [])
 

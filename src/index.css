@@ -28,8 +28,26 @@
   --danger:     #8B2E2E;
 }
 
-/* ── Light theme overrides ───────────────────────────────────────────────────── */
-html.light {
+/* ── Slate theme overrides ───────────────────────────────────────────────────── */
+html.slate {
+  --bg-primary:   #1a1d22;
+  --bg-secondary: #20242a;
+  --bg-tertiary:  #181b20;
+  --bg-card:      #262a31;
+  --border:       #353a42;
+  --text-primary:   #e5e7eb;
+  --text-secondary: #9aa1ab;
+  --text-tertiary:  #6b727b;
+  --accent:     #C4521A;
+  --accent-dim: #9A3E12;
+  --safe:       #4A7C3F;
+  --safe-dim:   #2D4A2D;
+  --warn:       #C4521A;
+  --danger:     #8B2E2E;
+}
+
+/* ── Parchment theme overrides ───────────────────────────────────────────────── */
+html.parchment {
   --bg-primary:   #E8E4D9;
   --bg-secondary: #DDD8CC;
   --bg-tertiary:  #D4CFC3;
