@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useHomeAssistant } from '../hooks/useHomeAssistant'
-import { IconThermometer, IconFire, IconRadio } from './icons'
+import { IconThermometer, IconLightbulb, IconRadio } from './icons'
 
 export default function HomeAssistantCard() {
   const ha = useHomeAssistant()
@@ -111,7 +111,7 @@ export default function HomeAssistantCard() {
 
   const sections = [
     { id: 'climate', label: 'Climate', Icon: IconThermometer },
-    { id: 'lights',  label: 'Lights',  Icon: IconFire        },
+    { id: 'lights',  label: 'Lights',  Icon: IconLightbulb   },
     { id: 'media',   label: 'Media',   Icon: IconRadio       },
   ]
 
