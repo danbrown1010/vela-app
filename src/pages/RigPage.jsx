@@ -192,7 +192,9 @@ export default function RigPage() {
       <div ref={scrollRef} onScroll={handleScroll} style={{ flex: 1, overflowY: 'auto' }}>
         <div className="p-4 flex flex-col gap-5" style={{ paddingBottom: 'calc(24px + env(safe-area-inset-bottom))' }}>
           {activeIntegration === 'ecoflow' && <EcoflowSection onShowInfo={setEcoInfo} />}
-          {activeIntegration === 'ecoflow' && <BatteriesSection />}
+          {activeIntegration === 'ecoflow' && (
+            <SensorBatteriesSummary onTap={() => setActiveIntegration('home_assistant')} />
+          )}
           {activeIntegration === 'starlink' && <CommunicationsSection />}
           {activeIntegration === 'home_assistant' && (
             <HomeAssistantCard />
@@ -692,6 +694,73 @@ const emptyMsgStyle = {
   borderRadius: 14, padding: 16, fontSize: 12,
   color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)',
   textAlign: 'center',
+}
+
+// ─── Sensor batteries summary (Power tab → taps to Environment/CLIMATE) ──────
+
+function SensorBatteriesSummary({ onTap }) {
+  const { batteries, isConfigured } = useBatteries()
+
+  if (!isConfigured) return null
+
+  const online     = batteries.filter(b => b.soc != null)
+  const low        = online.filter(b => b.soc <= 20)
+  const total      = batteries.length
+  const allHealthy = low.length === 0 && online.length === total
+
+  const dotColor = allHealthy
+    ? '#22c55e'
+    : low.length > 0
+    ? '#ef4444'
+    : 'var(--text-tertiary)'
+
+  const summary = total === 0
+    ? 'No sensors configured'
+    : low.length > 0
+    ? `${low.length} sensor${low.length === 1 ? '' : 's'} low`
+    : allHealthy
+    ? `All ${total} sensors healthy`
+    : `${online.length} of ${total} online`
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <SectionHeader title="Sensor Batteries" />
+      <button
+        onClick={onTap}
+        style={{
+          width: '100%',
+          display: 'flex', alignItems: 'center', gap: 12,
+          padding: '14px 16px',
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border)',
+          borderRadius: 14,
+          cursor: 'pointer', textAlign: 'left',
+        }}
+        className="active:opacity-70 transition-opacity"
+      >
+        <div style={{
+          width: 8, height: 8, borderRadius: '50%',
+          background: dotColor, flexShrink: 0,
+        }} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{
+            fontSize: 14, fontWeight: 600,
+            color: 'var(--text-primary)', fontFamily: 'var(--font-body)',
+          }}>
+            {summary}
+          </div>
+          <div style={{
+            fontSize: 11, color: 'var(--text-tertiary)',
+            fontFamily: 'var(--font-mono)', marginTop: 2,
+            letterSpacing: '0.06em',
+          }}>
+            VIEW ON ENVIRONMENT
+          </div>
+        </div>
+        <div style={{ color: 'var(--text-tertiary)', fontSize: 16, flexShrink: 0 }}>›</div>
+      </button>
+    </div>
+  )
 }
 
 // ─── Batteries ────────────────────────────────────────────────────────────────
