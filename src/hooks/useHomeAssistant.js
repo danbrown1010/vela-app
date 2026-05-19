@@ -69,6 +69,9 @@ export function useHomeAssistant() {
       'switch.starlink_stowed',
       'media_player.chomp_stereo',
       'media_player.spotify_dan_brown',
+      'sensor.system_monitor_processor_temperature',
+      'sensor.system_monitor_disk_free',
+      'sensor.system_monitor_disk_use_percent',
     ]
 
     try {
