@@ -38,30 +38,43 @@ export default function AuthPage({ onSignIn, notAllowed = false }) {
           <VelaLogo size={36} transparent textShadow="0 1px 8px rgba(0,0,0,0.5)" />
         </a>
 
+        {/* Tag */}
+        <div style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: 11,
+          letterSpacing: '0.14em',
+          textTransform: 'uppercase',
+          color: 'rgba(240,237,228,0.55)',
+          textAlign: 'center',
+        }}>
+          Expedition intelligence
+        </div>
+
         {/* Headline */}
         <div style={{
-          fontSize: 42,
+          fontSize: 'clamp(42px, 10vw, 64px)',
           fontWeight: 700,
           letterSpacing: '-0.02em',
           color: 'var(--text-primary)',
           fontFamily: 'var(--font-body)',
-          lineHeight: 1.1,
+          lineHeight: 1.05,
           textAlign: 'center',
-          textShadow: '0 2px 20px rgba(0,0,0,0.6)',
+          textShadow: '0 2px 20px rgba(0,0,0,0.4)',
+          marginTop: -4,
         }}>
-          Go further!
+          Go Further.
         </div>
 
         {/* Tagline */}
         <div style={{
           fontSize: 16,
-          color: 'rgba(240,237,228,0.7)',
+          color: 'rgba(240,237,228,0.75)',
           fontFamily: 'var(--font-body)',
-          lineHeight: 1.5,
-          maxWidth: 260,
+          lineHeight: 1.6,
+          maxWidth: 300,
           textAlign: 'center',
         }}>
-          Expedition intelligence for overlanders, photographers, and off-grid adventurers.
+          Real-time fire alerts, EcoFlow monitoring, AI survival expert, and gear registry — built for overlanders who go off the map.
         </div>
 
         {/* Access restricted banner */}
@@ -115,17 +128,16 @@ export default function AuthPage({ onSignIn, notAllowed = false }) {
           </span>
         </button>
 
-        {/* Feature pills — 3 on one line */}
-        <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
-          {['Fire & safety alerts', 'AI Survival Agent', 'EcoFlow + Starlink'].map(f => (
+        {/* Feature pills */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center', maxWidth: 320 }}>
+          {['Fire & safety alerts', 'EcoFlow monitoring', 'Offline maps', 'AI survival agent', 'Gear registry'].map(f => (
             <div key={f} style={{
-              background: 'rgba(240,237,228,0.15)',
-              backdropFilter: 'blur(8px)',
-              border: '1px solid rgba(240,237,228,0.25)',
+              background: 'rgba(240,237,228,0.08)',
+              border: '1px solid rgba(240,237,228,0.15)',
               borderRadius: 20,
-              padding: '4px 10px',
+              padding: '5px 12px',
               fontSize: 11,
-              color: 'rgba(240,237,228,0.8)',
+              color: 'rgba(240,237,228,0.65)',
               fontFamily: 'var(--font-mono)',
               letterSpacing: '0.04em',
               whiteSpace: 'nowrap',
