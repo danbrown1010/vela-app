@@ -236,11 +236,12 @@ export default function HomeAssistantCard() {
               const soc     = Number.isFinite(rawSoc) ? rawSoc : null
               const tempNum = parseFloat(temp)
               const humNum  = parseFloat(hum)
+              const offline = isSensorOffline(ha, zone)
 
               if (!temp && !hum) return null
 
               const battColor = soc == null ? 'var(--text-tertiary)'
-                : soc > 50 ? '#22c55e'
+                : soc > 50 ? 'var(--text-secondary)'
                 : soc > 20 ? '#f59e0b'
                 : '#ef4444'
 
@@ -267,30 +268,37 @@ export default function HomeAssistantCard() {
                       )}
                     </div>
                     <div style={{
-                      fontSize: 22, fontWeight: 700,
-                      color: 'var(--text-primary)', fontFamily: 'var(--font-body)', lineHeight: 1,
+                      fontSize: offline ? 10 : 22, fontWeight: offline ? 400 : 700,
+                      color: offline ? 'var(--text-tertiary)' : 'var(--text-primary)',
+                      fontFamily: offline ? 'var(--font-mono)' : 'var(--font-body)',
+                      letterSpacing: offline ? '0.08em' : undefined,
+                      lineHeight: 1,
                     }}>
-                      {Number.isFinite(tempNum)
-                        ? `${tempNum.toFixed(1)}°`
-                        : <IconMoon style={{ width: 18, height: 18, color: 'var(--text-tertiary)' }} />
+                      {offline
+                        ? 'ASLEEP'
+                        : Number.isFinite(tempNum) ? `${tempNum.toFixed(1)}°` : '—'
                       }
                     </div>
                   </div>
                   <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
-                    {hum && (
+                    {!offline && hum && (
                       <div style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}>
                         {Number.isFinite(humNum)
                           ? <>{humNum.toFixed(0)}%<span style={{ fontSize: 10, color: 'var(--text-tertiary)', marginLeft: 2 }}>RH</span></>
-                          : <IconMoon style={{ width: 11, height: 11, color: 'var(--text-tertiary)' }} />
+                          : '—'
                         }
                       </div>
                     )}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: battColor }}>
-                      <BatteryIcon soc={soc} />
-                      <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', fontWeight: 600, lineHeight: 1 }}>
-                        {soc != null ? `${Math.round(soc)}%` : <IconMoon style={{ width: 10, height: 10 }} />}
-                      </span>
-                    </div>
+                    {!offline && soc != null && (
+                      <div style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 4,
+                        fontSize: 11, fontFamily: 'var(--font-mono)',
+                        color: battColor,
+                      }}>
+                        <IconBattery level={soc} size={14} />
+                        <span>{Math.round(soc)}%</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )
@@ -587,4 +595,28 @@ function BatteryIcon({ soc }) {
       )}
     </svg>
   )
+}
+
+function IconBattery({ level = 0, size = 14, style: extraStyle = {} }) {
+  const clamped = Math.max(0, Math.min(100, level))
+  const fillWidth = (clamped / 100) * 15
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2"
+      strokeLinecap="round" strokeLinejoin="round"
+      style={{ flexShrink: 0, ...extraStyle }}>
+      <rect x="2" y="7" width="18" height="10" rx="2" ry="2" />
+      <line x1="22" y1="11" x2="22" y2="13" />
+      {clamped > 0 && (
+        <rect x="3.5" y="8.5" width={fillWidth} height={7} fill="currentColor" stroke="none" rx="1" />
+      )}
+    </svg>
+  )
+}
+
+function isSensorOffline(ha, zone) {
+  const powerState = ha.getState(zone.powerId)
+  const powerOff = powerState === 'off'
+  const battUnavailable = !Number.isFinite(parseFloat(ha.getState(zone.battId)))
+  return powerOff || battUnavailable
 }
