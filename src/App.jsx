@@ -126,7 +126,13 @@ function AppShell({ user }) {
   const [editingTrip,           setEditingTrip]           = useState(null)
   const [moreSubview,           setMoreSubview]           = useState(null)
   const [showSettings,          setShowSettings]          = useState(false)
+  const [closingSettings,       setClosingSettings]       = useState(false)
   const [pendingSettingsSection, setPendingSettingsSection] = useState(null)
+
+  const closeSettings = () => {
+    setClosingSettings(true)
+    setTimeout(() => { setShowSettings(false); setClosingSettings(false) }, 240)
+  }
 
   const openCreate  = () => setShowCreate(true)
   const closeCreate = () => setShowCreate(false)
@@ -136,7 +142,7 @@ function AppShell({ user }) {
   const handleTabChange = (tab) => {
     setActiveTab(tab)
     setMoreSubview(null)
-    setShowSettings(false)
+    closeSettings()
   }
 
   // Handle vela:open-settings deep-link events
@@ -220,7 +226,7 @@ function AppShell({ user }) {
       {showSettings && (
         <>
           <div
-            onClick={() => setShowSettings(false)}
+            onClick={closeSettings}
             style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 190, backdropFilter: 'blur(2px)' }}
           />
           <div style={{
@@ -230,7 +236,7 @@ function AppShell({ user }) {
             borderLeft: '1px solid var(--border)',
             zIndex: 195,
             display: 'flex', flexDirection: 'column',
-            animation: 'slideInRight 0.25s ease-out',
+            animation: closingSettings ? 'slideOutRight 0.24s ease-in forwards' : 'slideInRight 0.25s ease-out',
           }}>
             <div style={{
               padding: '16px 16px 12px',
@@ -244,7 +250,7 @@ function AppShell({ user }) {
                 Settings
               </div>
               <button
-                onClick={() => setShowSettings(false)}
+                onClick={closeSettings}
                 aria-label="Close settings"
                 style={{
                   width: 32, height: 32, borderRadius: 8,
@@ -258,14 +264,14 @@ function AppShell({ user }) {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" strokeWidth="2"
                   strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M18 6L6 18M6 6l12 12"/>
+                  <path d="M9 18l6-6-6-6"/>
                 </svg>
               </button>
             </div>
             <div style={{ flex: 1, overflowY: 'auto' }}>
               <SettingsPage
                 embedded
-                onClose={() => setShowSettings(false)}
+                onClose={closeSettings}
                 onNavigateTab={handleTabChange}
                 pendingSection={pendingSettingsSection}
                 onConsumePendingSection={() => setPendingSettingsSection(null)}

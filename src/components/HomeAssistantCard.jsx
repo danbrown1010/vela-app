@@ -580,22 +580,6 @@ function SysStatsModal({ ha, onClose }) {
   )
 }
 
-function BatteryIcon({ soc }) {
-  const fillW = soc != null ? Math.max(0, Math.min(1, soc / 100)) * 13.5 : 0
-  return (
-    <svg viewBox="0 0 22 10" style={{ width: 22, height: 10 }} fill="none">
-      {/* body */}
-      <rect x="0.75" y="0.75" width="18.5" height="8.5" rx="1.75"
-        stroke="currentColor" strokeWidth="1.25" />
-      {/* positive terminal */}
-      <rect x="19.5" y="3.25" width="2" height="3.5" rx="0.75" fill="currentColor" />
-      {/* charge fill */}
-      {fillW > 0 && (
-        <rect x="2.25" y="2.25" width={fillW} height="5.5" rx="0.75" fill="currentColor" />
-      )}
-    </svg>
-  )
-}
 
 function IconBattery({ level = 0, size = 14, style: extraStyle = {} }) {
   const clamped = Math.max(0, Math.min(100, level))

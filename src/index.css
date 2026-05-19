@@ -86,6 +86,11 @@ html, body, #root {
   to   { transform: translateX(0);    opacity: 1; }
 }
 
+@keyframes slideOutRight {
+  from { transform: translateX(0);    opacity: 1; }
+  to   { transform: translateX(100%); opacity: 0; }
+}
+
 @keyframes pulseLeft {
   0%, 100% { transform: translateX(0);   opacity: 0.4; }
   50%       { transform: translateX(-2px); opacity: 1;   }
