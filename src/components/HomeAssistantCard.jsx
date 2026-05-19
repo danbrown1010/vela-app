@@ -200,34 +200,45 @@ export default function HomeAssistantCard() {
             {[
               {
                 label: 'Ursa Minor',
-                tempId: 'sensor.ursa_minor_temperature',
-                humId: 'sensor.ursa_minor_humidity',
+                tempId:  'sensor.ursa_minor_temperature',
+                humId:   'sensor.ursa_minor_humidity',
                 powerId: 'binary_sensor.ursa_minor_power',
+                battId:  'sensor.ursa_minor_battery',
               },
               {
                 label: 'Cabin',
-                tempId: 'sensor.cabin_temperature',
-                humId: 'sensor.cabin_humidity',
+                tempId:  'sensor.cabin_temperature',
+                humId:   'sensor.cabin_humidity',
                 powerId: 'binary_sensor.cabin_power',
+                battId:  'sensor.cabin_battery',
               },
               {
                 label: 'Outside',
-                tempId: 'sensor.outside_temperature',
-                humId: 'sensor.outside_humidity',
+                tempId:  'sensor.outside_temperature',
+                humId:   'sensor.outside_humidity',
                 powerId: 'binary_sensor.outside_power',
+                battId:  'sensor.outside_battery',
               },
               {
                 label: 'Refrigerator',
-                tempId: 'sensor.refrigerator_temperature',
-                humId: 'sensor.refrigerator_humidity',
+                tempId:  'sensor.refrigerator_temperature',
+                humId:   'sensor.refrigerator_humidity',
                 powerId: 'binary_sensor.refrigerator_power',
+                battId:  'sensor.refrigerator_battery',
               },
             ].map(zone => {
               const temp  = ha.getState(zone.tempId)
-              const hum   = zone.humId ? ha.getState(zone.humId) : null
-              const power = zone.powerId ? ha.isOn(zone.powerId) : null
+              const hum   = zone.humId  ? ha.getState(zone.humId)  : null
+              const power = zone.powerId ? ha.isOn(zone.powerId)   : null
+              const rawSoc = parseFloat(ha.getState(zone.battId))
+              const soc   = Number.isFinite(rawSoc) ? rawSoc : null
 
               if (!temp && !hum) return null
+
+              const battColor = soc == null ? 'var(--text-tertiary)'
+                : soc > 50 ? '#22c55e'
+                : soc > 20 ? '#f59e0b'
+                : '#ef4444'
 
               return (
                 <div key={zone.label} style={{
@@ -258,16 +269,18 @@ export default function HomeAssistantCard() {
                       {temp ? `${parseFloat(temp).toFixed(1)}°` : '—'}
                     </div>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
+                  <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
                     {hum && (
                       <div style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}>
                         {parseFloat(hum).toFixed(0)}%
                         <span style={{ fontSize: 10, color: 'var(--text-tertiary)', marginLeft: 2 }}>RH</span>
                       </div>
                     )}
-
-                    <div style={{ fontSize: 10, color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
-                      {ha.entities[zone.tempId]?.attributes?.unit_of_measurement || '°F'}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: battColor }}>
+                      <BatteryIcon soc={soc} />
+                      <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', fontWeight: 600, lineHeight: 1 }}>
+                        {soc != null ? `${Math.round(soc)}%` : '—'}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -433,5 +446,22 @@ export default function HomeAssistantCard() {
 
       </div>
     </div>
+  )
+}
+
+function BatteryIcon({ soc }) {
+  const fillW = soc != null ? Math.max(0, Math.min(1, soc / 100)) * 13.5 : 0
+  return (
+    <svg viewBox="0 0 22 10" style={{ width: 22, height: 10 }} fill="none">
+      {/* body */}
+      <rect x="0.75" y="0.75" width="18.5" height="8.5" rx="1.75"
+        stroke="currentColor" strokeWidth="1.25" />
+      {/* positive terminal */}
+      <rect x="19.5" y="3.25" width="2" height="3.5" rx="0.75" fill="currentColor" />
+      {/* charge fill */}
+      {fillW > 0 && (
+        <rect x="2.25" y="2.25" width={fillW} height="5.5" rx="0.75" fill="currentColor" />
+      )}
+    </svg>
   )
 }
