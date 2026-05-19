@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useHomeAssistant } from '../hooks/useHomeAssistant'
-import { IconThermometer, IconLightbulb, IconRadio, IconMoon } from './icons'
+import { IconThermometer, IconLightbulb, IconRadio, IconMoon, IconCpu } from './icons'
 
 export default function HomeAssistantCard() {
   const ha = useHomeAssistant()
   const [activeSection, setActiveSection] = useState('climate')
+  const [sysOpen, setSysOpen] = useState(false)
 
   if (!ha.token) {
     return (
@@ -147,6 +148,18 @@ export default function HomeAssistantCard() {
             CONNECTED
           </div>
         </div>
+        <button
+          onClick={() => setSysOpen(true)}
+          aria-label="System stats"
+          style={{
+            width: 28, height: 28, borderRadius: 7,
+            border: '1px solid var(--border)', background: 'transparent',
+            color: 'var(--text-tertiary)', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >
+          <IconCpu style={{ width: 14, height: 14 }} />
+        </button>
       </div>
 
       {/* Section tabs */}
@@ -179,41 +192,6 @@ export default function HomeAssistantCard() {
           )
         })}
       </div>
-
-      {/* System monitor stats */}
-      {(() => {
-        const cpuTemp   = parseFloat(ha.getState('sensor.system_monitor_processor_temperature'))
-        const diskFree  = parseFloat(ha.getState('sensor.system_monitor_disk_free'))
-        const diskUsePct = parseFloat(ha.getState('sensor.system_monitor_disk_use_percent'))
-        const stats = [
-          { label: 'CPU Temp', val: Number.isFinite(cpuTemp)    ? `${Math.round(cpuTemp)}°`        : null },
-          { label: 'Disk Free', val: Number.isFinite(diskFree)  ? `${diskFree.toFixed(1)} GiB`     : null },
-          { label: 'Disk Used', val: Number.isFinite(diskUsePct) ? `${diskUsePct.toFixed(0)}%`     : null },
-        ]
-        return (
-          <div style={{
-            display: 'grid', gridTemplateColumns: '1fr 1fr 1fr',
-            gap: 0, borderBottom: '1px solid var(--border)',
-          }}>
-            {stats.map((s, i) => (
-              <div key={s.label} style={{
-                padding: '8px 10px', textAlign: 'center',
-                borderRight: i < stats.length - 1 ? '1px solid var(--border)' : 'none',
-              }}>
-                <div style={{
-                  fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)',
-                  textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 3,
-                }}>
-                  {s.label}
-                </div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'var(--font-body)' }}>
-                  {s.val ?? <IconMoon style={{ width: 11, height: 11, color: 'var(--text-tertiary)', verticalAlign: 'middle' }} />}
-                </div>
-              </div>
-            ))}
-          </div>
-        )
-      })()}
 
       {/* Section content */}
       <div style={{ padding: '12px 14px' }}>
@@ -488,6 +466,9 @@ export default function HomeAssistantCard() {
           <button onClick={ha.reload} aria-label="Refresh" style={footerRefreshStyle}>↺</button>
         </div>
       )}
+
+      {/* System stats modal */}
+      {sysOpen && <SysStatsModal ha={ha} onClose={() => setSysOpen(false)} />}
     </div>
   )
 }
@@ -497,6 +478,98 @@ const footerRefreshStyle = {
   border: '1px solid var(--border)', background: 'transparent',
   color: 'var(--text-tertiary)', fontSize: 11,
   cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+}
+
+function SysStatsModal({ ha, onClose }) {
+  const cpuTemp    = parseFloat(ha.getState('sensor.system_monitor_processor_temperature'))
+  const diskFree   = parseFloat(ha.getState('sensor.system_monitor_disk_free'))
+  const diskUsePct = parseFloat(ha.getState('sensor.system_monitor_disk_use_percent'))
+
+  const stats = [
+    {
+      label: 'CPU Temperature',
+      value: Number.isFinite(cpuTemp)    ? `${cpuTemp.toFixed(1)}°C`       : null,
+      unit: null,
+    },
+    {
+      label: 'Disk Free',
+      value: Number.isFinite(diskFree)   ? `${diskFree.toFixed(2)} GiB`    : null,
+      unit: null,
+    },
+    {
+      label: 'Disk Used',
+      value: Number.isFinite(diskUsePct) ? `${diskUsePct.toFixed(1)}%`     : null,
+      bar: Number.isFinite(diskUsePct) ? diskUsePct : null,
+    },
+  ]
+
+  return (
+    <>
+      <div
+        onClick={onClose}
+        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 200, backdropFilter: 'blur(2px)' }}
+      />
+      <div style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0,
+        background: 'var(--bg-card)',
+        borderRadius: '16px 16px 0 0',
+        padding: '0 0 env(safe-area-inset-bottom)',
+        zIndex: 201,
+        animation: 'slideUp 0.22s ease-out',
+      }}>
+        <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--border)', margin: '12px auto 16px' }} />
+
+        <div style={{ padding: '0 20px 20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
+            <IconCpu style={{ width: 18, height: 18, color: 'var(--accent)' }} />
+            <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-body)' }}>
+              chompOS System
+            </div>
+          </div>
+
+          {stats.map((s, i) => (
+            <div key={s.label} style={{
+              paddingBottom: 14, marginBottom: 14,
+              borderBottom: i < stats.length - 1 ? '1px solid var(--border)' : 'none',
+            }}>
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                marginBottom: s.bar != null ? 8 : 0,
+              }}>
+                <div style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}>
+                  {s.label}
+                </div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'var(--font-body)' }}>
+                  {s.value ?? <IconMoon style={{ width: 13, height: 13, color: 'var(--text-tertiary)' }} />}
+                </div>
+              </div>
+              {s.bar != null && (
+                <div style={{ height: 5, borderRadius: 3, background: 'var(--bg-secondary)', overflow: 'hidden' }}>
+                  <div style={{
+                    height: '100%', width: `${s.bar}%`,
+                    background: s.bar > 85 ? '#ef4444' : s.bar > 65 ? '#f59e0b' : '#22c55e',
+                    transition: 'width 0.4s',
+                  }} />
+                </div>
+              )}
+            </div>
+          ))}
+
+          <button
+            onClick={onClose}
+            style={{
+              width: '100%', marginTop: 4, padding: '12px',
+              borderRadius: 10, border: '1px solid var(--border)',
+              background: 'transparent', color: 'var(--text-secondary)',
+              fontSize: 14, fontFamily: 'var(--font-body)', cursor: 'pointer',
+            }}
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </>
+  )
 }
 
 function BatteryIcon({ soc }) {

@@ -59,6 +59,7 @@ import Camera        from 'lucide-react/dist/esm/icons/camera.mjs'
 import Radio         from 'lucide-react/dist/esm/icons/radio.mjs'
 import Lightbulb     from 'lucide-react/dist/esm/icons/lightbulb.mjs'
 import Moon          from 'lucide-react/dist/esm/icons/moon.mjs'
+import Cpu           from 'lucide-react/dist/esm/icons/cpu.mjs'
 
 const W = 1.75
 
@@ -129,3 +130,4 @@ export const IconDroplets    = (p) => <Droplets    strokeWidth={W} {...p} />
 export const IconRadio       = (p) => <Radio       strokeWidth={W} {...p} />
 export const IconLightbulb   = (p) => <Lightbulb   strokeWidth={W} {...p} />
 export const IconMoon        = (p) => <Moon        strokeWidth={W} {...p} />
+export const IconCpu         = (p) => <Cpu         strokeWidth={W} {...p} />
