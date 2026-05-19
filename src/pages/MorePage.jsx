@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { StatusBadge } from '../components/StatusBadge'
 import { useAppStore } from '../store/index'
-import { GpsStatus } from '../components/GpsStatus'
 import { UserAvatar } from '../components/UserAvatar'
+import { CollapsingHeader } from '../components/CollapsingHeader'
 import {
   IconPeople, IconPaw, IconShield, IconBook,
   IconStar, IconBackpack, IconUtensils,
@@ -39,24 +39,22 @@ const SECTIONS = [
 ]
 
 export default function MorePage({ onNavigate }) {
-  const { user, profile, pendingInviteCount } = useAppStore()
+  const { user, profile, pendingInviteCount, location, gpsStatus } = useAppStore()
   const displayName = profile?.name || user?.user_metadata?.full_name || user?.email || 'User'
+  const gpsState = gpsStatus === 'locked' ? 'locked' : (gpsStatus === 'requesting' || gpsStatus === 'ip-based') ? 'searching' : 'off'
+  const gpsAccuracyM = Math.round(location?.accuracy ?? 0)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
 
-      {/* Sticky header */}
-      <div style={{ background: 'var(--bg-card)', borderBottom: '1px solid var(--border)', padding: '14px 16px', paddingRight: 48, flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <UserAvatar profile={profile} user={user} size={36} />
-          <div style={{ flex: 1, display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap', minWidth: 0 }}>
-            <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2, flexShrink: 0 }}>{displayName}</div>
-            <div style={{ fontSize: 11, color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)' }}>{user?.email}</div>
-          </div>
-          <StatusBadge status="safe" label="PRO" />
-        </div>
-        <GpsStatus />
-      </div>
+      <CollapsingHeader
+        image={{ node: <UserAvatar profile={profile} user={user} size={40} />, shape: 'circle' }}
+        title={displayName}
+        subtitle={user?.email ?? ''}
+        uppercaseTitle={false}
+        badge={{ label: 'PRO', tone: 'success' }}
+        gps={{ state: gpsState, accuracyM: gpsAccuracyM }}
+      />
 
       <div style={{ flex: 1, overflowY: 'auto' }}>
       <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 20, paddingBottom: 'calc(24px + env(safe-area-inset-bottom))' }}>

@@ -78,6 +78,8 @@ export function CollapsingHeader({
 
   const badgeColor =
     badge?.tone === 'success' ? '#22c55e' :
+    badge?.tone === 'danger'  ? '#ef4444' :
+    badge?.tone === 'warn'    ? '#f59e0b' :
     badge?.tone === 'muted'   ? 'var(--text-tertiary)' :
                                  accent
 

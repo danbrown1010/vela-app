@@ -9,7 +9,7 @@ import { useFireData } from '../hooks/useFireData'
 import { useFireWeather } from '../hooks/useWeather'
 import { useAppStore } from '../store/index'
 import { StatusBadge } from '../components/StatusBadge'
-import { GpsStatus } from '../components/GpsStatus'
+import { CollapsingHeader } from '../components/CollapsingHeader'
 
 const SEED = {
   evac:       { yourZone: 'Clear', advisory: 2, warning: 1, order: 0 },
@@ -70,7 +70,9 @@ function usePullToRefresh(onRefresh) {
 }
 
 export default function SafetyPage() {
-  const { location, aqi } = useAppStore()
+  const { location, aqi, gpsStatus } = useAppStore()
+  const gpsState = gpsStatus === 'locked' ? 'locked' : (gpsStatus === 'requesting' || gpsStatus === 'ip-based') ? 'searching' : 'off'
+  const gpsAccuracyM = Math.round(location?.accuracy ?? 0)
   const { fires, loading: fireLoading, error: fireError, lastUpdated, refetch: refetchFires } = useFireData()
   const { alerts } = useFireWeather(location?.lat, location?.lng)
   const { scrollRef, pullY, onTouchStart, onTouchMove, onTouchEnd } = usePullToRefresh(refetchFires)
@@ -102,18 +104,24 @@ export default function SafetyPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Sticky page header */}
-      <div style={{ background: 'var(--bg-card)', borderBottom: '1px solid var(--border)', padding: '14px 16px', paddingRight: 48, flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-            <IconFlame style={{ width: 22, height: 22, color: 'var(--text-primary)', flexShrink: 0, alignSelf: 'center' }} />
-            <div style={{ fontSize: 26, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2, flexShrink: 0, textTransform: 'uppercase' }}>Safety</div>
-            <div style={{ fontSize: 11, color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)' }}>Keeping a check on things...</div>
-          </div>
-          <StatusBadge status={monitorBadge} label={monitorLabel} />
-        </div>
-        <GpsStatus />
-      </div>
+      <CollapsingHeader
+        image={{
+          node: (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+              strokeLinecap="round" strokeLinejoin="round"
+              style={{ color: 'var(--text-primary)', width: '60%', height: '60%' }}>
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+          ),
+        }}
+        title="SAFETY"
+        subtitle="Keeping a check on things"
+        badge={{
+          label: monitorLabel,
+          tone: monitorBadge === 'danger' ? 'danger' : monitorBadge === 'warn' ? 'warn' : 'success',
+        }}
+        gps={{ state: gpsState, accuracyM: gpsAccuracyM }}
+      />
       <div
         ref={scrollRef}
         style={{ flex: 1, overflowY: 'auto' }}
