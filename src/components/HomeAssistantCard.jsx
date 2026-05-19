@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useHomeAssistant } from '../hooks/useHomeAssistant'
-import { IconThermometer, IconLightbulb, IconRadio } from './icons'
+import { IconThermometer, IconLightbulb, IconRadio, IconMoon } from './icons'
 
 export default function HomeAssistantCard() {
   const ha = useHomeAssistant()
@@ -227,11 +227,13 @@ export default function HomeAssistantCard() {
                 battId:  'sensor.refrigerator_battery',
               },
             ].map(zone => {
-              const temp  = ha.getState(zone.tempId)
-              const hum   = zone.humId  ? ha.getState(zone.humId)  : null
-              const power = zone.powerId ? ha.isOn(zone.powerId)   : null
-              const rawSoc = parseFloat(ha.getState(zone.battId))
-              const soc   = Number.isFinite(rawSoc) ? rawSoc : null
+              const temp    = ha.getState(zone.tempId)
+              const hum     = zone.humId   ? ha.getState(zone.humId)  : null
+              const power   = zone.powerId ? ha.isOn(zone.powerId)    : null
+              const rawSoc  = parseFloat(ha.getState(zone.battId))
+              const soc     = Number.isFinite(rawSoc) ? rawSoc : null
+              const tempNum = parseFloat(temp)
+              const humNum  = parseFloat(hum)
 
               if (!temp && !hum) return null
 
@@ -266,20 +268,25 @@ export default function HomeAssistantCard() {
                       fontSize: 22, fontWeight: 700,
                       color: 'var(--text-primary)', fontFamily: 'var(--font-body)', lineHeight: 1,
                     }}>
-                      {temp ? `${parseFloat(temp).toFixed(1)}°` : '—'}
+                      {Number.isFinite(tempNum)
+                        ? `${tempNum.toFixed(1)}°`
+                        : <IconMoon style={{ width: 18, height: 18, color: 'var(--text-tertiary)' }} />
+                      }
                     </div>
                   </div>
                   <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
                     {hum && (
                       <div style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}>
-                        {parseFloat(hum).toFixed(0)}%
-                        <span style={{ fontSize: 10, color: 'var(--text-tertiary)', marginLeft: 2 }}>RH</span>
+                        {Number.isFinite(humNum)
+                          ? <>{humNum.toFixed(0)}%<span style={{ fontSize: 10, color: 'var(--text-tertiary)', marginLeft: 2 }}>RH</span></>
+                          : <IconMoon style={{ width: 11, height: 11, color: 'var(--text-tertiary)' }} />
+                        }
                       </div>
                     )}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: battColor }}>
                       <BatteryIcon soc={soc} />
                       <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', fontWeight: 600, lineHeight: 1 }}>
-                        {soc != null ? `${Math.round(soc)}%` : '—'}
+                        {soc != null ? `${Math.round(soc)}%` : <IconMoon style={{ width: 10, height: 10 }} />}
                       </span>
                     </div>
                   </div>
