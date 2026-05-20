@@ -16,7 +16,7 @@ export function EcoflowDeviceCard({ device, onShowInfo }) {
   const netW = inW - outW
   const remainMin = data?.remainTime
 
-  // Status dot color
+  // Status dot color — 3-tier when discharging: green >50%, orange 20–50%, red <20%
   const dotColor = loading
     ? 'var(--text-tertiary)'
     : error
@@ -24,9 +24,13 @@ export function EcoflowDeviceCard({ device, onShowInfo }) {
     : netW > 0
     ? '#22c55e'                                              // charging
     : netW < 0
-    ? hasBattery && soc != null && soc < 20
-      ? '#ef4444'                                            // discharging low
-      : '#f59e0b'                                            // discharging
+    ? soc == null || !hasBattery
+      ? '#f59e0b'
+      : soc < 20
+      ? '#ef4444'                                            // discharging critical
+      : soc < 50
+      ? '#f59e0b'                                            // discharging low
+      : '#22c55e'                                            // discharging healthy
     : 'var(--text-tertiary)'                                 // idle
 
   const statusLabel = loading
@@ -48,7 +52,7 @@ export function EcoflowDeviceCard({ device, onShowInfo }) {
       <style>{`@keyframes vela-soc-pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.35);opacity:0.55}}`}</style>
 
       {/* Header row */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginBottom: 14 }}>
         <div style={{
           width: 11, height: 11, borderRadius: '50%',
           background: dotColor, flexShrink: 0,

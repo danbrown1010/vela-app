@@ -125,7 +125,7 @@ export function CollapsingHeader({
       {/* Top row */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 12,
-        padding: `${headerPaddingY}px 20px ${lerp(8, 6, scrollProgress)}px`,
+        padding: `${headerPaddingY}px 16px ${lerp(8, 6, scrollProgress)}px`,
       }}>
 
         {/* Image slot — node OR src */}
@@ -275,7 +275,7 @@ export function CollapsingHeader({
       {/* GPS line */}
       {gps && (
         <div style={{
-          padding: '0 20px',
+          padding: '0 16px',
           height: lerp(20, 0, scrollProgress),
           opacity: gpsLineOpacity,
           overflow: 'hidden',
@@ -298,7 +298,7 @@ export function CollapsingHeader({
       {/* Children (tab chips, etc.) */}
       {children && (
         <div style={{
-          padding: `${lerp(12, 8, scrollProgress)}px 20px ${lerp(14, 10, scrollProgress)}px`,
+          padding: `${lerp(12, 8, scrollProgress)}px 16px ${lerp(14, 10, scrollProgress)}px`,
           borderBottom: scrollProgress > 0.5
             ? '1px solid var(--border)'
             : '1px solid transparent',
