@@ -149,21 +149,11 @@ function IdleHome({ onPlanTrip, onEditTrip, onNavigateToDocs }) {
   return (
     <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', height: '100%' }}>
       <CollapsingHeader
-        image={{
-          node: (
-            <svg width="100%" height="100%" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-              <g fill="var(--text-primary)">
-                <path d="M50 5C41.7 5 35 11.7 35 20c0 11.5 15 28 15 28s15-16.5 15-28C65 11.7 58.3 5 50 5zM50 26c-3.3 0-6-2.7-6-6s2.7-6 6-6s6 2.7 6 6-2.7 6-6 6z"/>
-                <path d="M2 92L30 38L45 63L38 73L53 92H2z"/>
-                <path d="M98 92L70 45L55 65L62 75L47 92H98z"/>
-                <path d="M46 92C46 92 47 78 50 70C53 62 57 59 55 52C53 45 49 48 49 48" fill="none" stroke="var(--bg-primary)" strokeWidth="5.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </g>
-            </svg>
-          ),
-        }}
+        image={{ src: '/vela-mark.png', alt: 'VELA', shape: 'square' }}
         title="VELA"
         subtitle="GO FURTHER."
         uppercaseTitle={false}
+        inlineSubtitle={true}
         gps={{ state: gpsState, accuracyM: gpsAccuracyM }}
         onOpenSettings={() => window.dispatchEvent(new CustomEvent('vela:open-settings', { detail: {} }))}
       />

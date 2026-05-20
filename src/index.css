@@ -11,7 +11,85 @@
   --font-body: 'Ubuntu', system-ui, sans-serif;
   --font-mono: 'Ubuntu Mono', monospace;
 
-  /* Dark theme (default) */
+  /* Default theme: Slate (cool charcoal) */
+  --bg-primary:   #1a1d22;
+  --bg-secondary: #20242a;
+  --bg-tertiary:  #181b20;
+  --bg-card:      #262a31;
+  --border:       #353a42;
+  --text-primary:   #e5e7eb;
+  --text-secondary: #9aa1ab;
+  --text-tertiary:  #6b727b;
+  --accent:     #C4521A;
+  --accent-dim: #9A3E12;
+  --safe:       #4A7C3F;
+  --safe-dim:   #2D4A2D;
+  --warn:       #C4521A;
+  --danger:     #8B2E2E;
+
+  /* Translucent header (theme-specific, referenced in CollapsingHeader) */
+  --header-bg:     rgba(26, 29, 34, 0.55);
+  --header-border: rgba(53, 58, 66, 0.45);
+
+  /* ── Radii ─────────────────────────────────────────────────────────────── */
+  --r-xs:  6px;
+  --r-sm:  8px;
+  --r-md:  10px;
+  --r-lg:  12px;
+  --r-xl:  14px;
+  --r-2xl: 16px;
+  --r-pill: 999px;
+
+  /* ── Spacing (4-pt grid) ────────────────────────────────────────────────── */
+  --s-1:  4px;
+  --s-2:  8px;
+  --s-3:  12px;
+  --s-4:  16px;
+  --s-5:  20px;
+  --s-6:  24px;
+  --s-8:  32px;
+  --s-10: 40px;
+  --s-12: 48px;
+  --s-16: 64px;
+  --s-24: 96px;
+
+  /* ── Shadows ────────────────────────────────────────────────────────────── */
+  --shadow-cta:    0 4px 24px rgba(196, 82, 26, 0.30);
+  --shadow-cta-sm: 0 4px 20px rgba(196, 82, 26, 0.25);
+  --shadow-card:   0 4px 32px rgba(0, 0, 0, 0.40);
+  --shadow-modal:  0 24px 80px rgba(0, 0, 0, 0.60);
+
+  /* ── Overlays (photo protection) ────────────────────────────────────────── */
+  --overlay-hero: linear-gradient(
+    to bottom,
+    rgba(26, 29, 34, 0.15) 0%,
+    rgba(26, 29, 34, 0.25) 30%,
+    rgba(26, 29, 34, 0.70) 60%,
+    rgba(26, 29, 34, 0.95) 100%
+  );
+  --overlay-auth: linear-gradient(
+    to bottom,
+    rgba(26, 29, 34, 0.15) 0%,
+    rgba(26, 29, 34, 0.25) 30%,
+    rgba(26, 29, 34, 0.70) 60%,
+    rgba(26, 29, 34, 0.93) 80%,
+    rgba(26, 29, 34, 0.98) 100%
+  );
+
+  /* ── Motion ─────────────────────────────────────────────────────────────── */
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --dur-fast: 0.15s;
+  --dur-med:  0.24s;
+  --dur-slow: 1.5s;
+
+  /* ── Tracking ───────────────────────────────────────────────────────────── */
+  --tracking-caps:  0.10em;
+  --tracking-tight: -0.02em;
+  --tracking-wide:  0.08em;
+}
+
+/* ── Evergreen theme overrides (warm forest) ────────────────────────────────── */
+html.evergreen {
   --bg-primary:   #1C2117;
   --bg-secondary: #242B1E;
   --bg-tertiary:  #1A1F15;
@@ -20,12 +98,23 @@
   --text-primary:   #F0EDE4;
   --text-secondary: #A8B89A;
   --text-tertiary:  #6B7D5E;
-  --accent:     #C4521A;
-  --accent-dim: #9A3E12;
-  --safe:       #4A7C3F;
-  --safe-dim:   #2D4A2D;
-  --warn:       #C4521A;
-  --danger:     #8B2E2E;
+  --header-bg:     rgba(28, 33, 23, 0.55);
+  --header-border: rgba(58, 74, 50, 0.45);
+  --overlay-hero: linear-gradient(
+    to bottom,
+    rgba(28, 33, 23, 0.15) 0%,
+    rgba(28, 33, 23, 0.25) 30%,
+    rgba(28, 33, 23, 0.70) 60%,
+    rgba(28, 33, 23, 0.95) 100%
+  );
+  --overlay-auth: linear-gradient(
+    to bottom,
+    rgba(28, 33, 23, 0.15) 0%,
+    rgba(28, 33, 23, 0.25) 30%,
+    rgba(28, 33, 23, 0.70) 60%,
+    rgba(28, 33, 23, 0.93) 80%,
+    rgba(28, 33, 23, 0.98) 100%
+  );
 }
 
 /* ── Slate theme overrides ───────────────────────────────────────────────────── */
@@ -44,6 +133,8 @@ html.slate {
   --safe-dim:   #2D4A2D;
   --warn:       #C4521A;
   --danger:     #8B2E2E;
+  --header-bg:     rgba(26, 29, 34, 0.55);
+  --header-border: rgba(53, 58, 66, 0.45);
 }
 
 /* ── Parchment theme overrides ───────────────────────────────────────────────── */
@@ -59,6 +150,23 @@ html.parchment {
   --accent:     #C4521A;
   --safe:       #2D4A2D;
   --danger:     #8B2E2E;
+  --header-bg:     rgba(232, 228, 217, 0.85);
+  --header-border: rgba(200, 195, 181, 0.60);
+  --overlay-hero: linear-gradient(
+    to bottom,
+    rgba(232, 228, 217, 0.15) 0%,
+    rgba(232, 228, 217, 0.25) 30%,
+    rgba(232, 228, 217, 0.70) 60%,
+    rgba(232, 228, 217, 0.95) 100%
+  );
+  --overlay-auth: linear-gradient(
+    to bottom,
+    rgba(232, 228, 217, 0.15) 0%,
+    rgba(232, 228, 217, 0.25) 30%,
+    rgba(232, 228, 217, 0.70) 60%,
+    rgba(232, 228, 217, 0.93) 80%,
+    rgba(232, 228, 217, 0.98) 100%
+  );
 }
 
 html, body, #root {

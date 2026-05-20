@@ -10,8 +10,8 @@ if (_migrateTheme === 'light') localStorage.setItem('vela-theme', 'parchment')
 
 // Apply persisted theme before first render; write default so it's
 // always set after first visit (prevents blank localStorage on reload)
-const savedTheme = localStorage.getItem('vela-theme') || 'evergreen'
-if (!localStorage.getItem('vela-theme')) localStorage.setItem('vela-theme', 'evergreen')
+const savedTheme = localStorage.getItem('vela-theme') || 'slate'
+if (!localStorage.getItem('vela-theme')) localStorage.setItem('vela-theme', 'slate')
 document.documentElement.classList.add(savedTheme)
 
 // --color-accent is the Tailwind v4 @theme variable; overriding it on

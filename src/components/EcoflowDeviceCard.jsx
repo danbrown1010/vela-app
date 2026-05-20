@@ -42,13 +42,17 @@ export function EcoflowDeviceCard({ device, onShowInfo }) {
   return (
     <div style={{
       background: 'var(--bg-card)', border: '1px solid var(--border)',
-      borderRadius: 14, padding: 14,
+      borderRadius: 14, padding: '14px 14px 22px',
+      position: 'relative', overflow: 'hidden',
     }}>
+      <style>{`@keyframes vela-soc-pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.35);opacity:0.55}}`}</style>
+
       {/* Header row */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: hasBattery ? 10 : 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
         <div style={{
-          width: 8, height: 8, borderRadius: '50%',
+          width: 11, height: 11, borderRadius: '50%',
           background: dotColor, flexShrink: 0,
+          animation: (netW !== 0 && !loading && !error) ? 'vela-soc-pulse 1.6s ease-in-out infinite' : 'none',
         }} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
@@ -67,26 +71,24 @@ export function EcoflowDeviceCard({ device, onShowInfo }) {
           </div>
         </div>
 
-        {hasBattery && soc != null && (
-          <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            <div style={{
-              fontSize: 18, fontWeight: 700, color: accent,
-              fontFamily: 'var(--font-body)', lineHeight: 1,
-            }}>
-              {soc}%
-            </div>
-            {remainMin != null && remainMin > 0 && (
-              <div style={{
-                fontSize: 10, fontFamily: 'var(--font-mono)',
-                color: 'var(--text-tertiary)', marginTop: 3,
-              }}>
-                {formatRemain(remainMin)}
-              </div>
-            )}
+        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+          <div style={{
+            fontSize: 12, fontFamily: 'var(--font-mono)',
+            color: 'var(--text-secondary)', lineHeight: 1.3,
+          }}>
+            {device.model}
           </div>
-        )}
+          {remainMin != null && remainMin > 0 && (
+            <div style={{
+              fontSize: 10, fontFamily: 'var(--font-mono)',
+              color: 'var(--text-tertiary)', marginTop: 2,
+            }}>
+              {formatRemain(remainMin)}
+            </div>
+          )}
+        </div>
 
-        <div style={{ display: 'flex', gap: 4, flexShrink: 0, marginLeft: hasBattery ? 4 : 0 }}>
+        <div style={{ display: 'flex', gap: 4, flexShrink: 0, marginLeft: 4 }}>
           {onShowInfo && (
             <button
               onClick={() => onShowInfo({ device, data })}
@@ -97,31 +99,20 @@ export function EcoflowDeviceCard({ device, onShowInfo }) {
         </div>
       </div>
 
-      {/* Battery bar */}
-      {hasBattery && soc != null && (
-        <div style={{
-          height: 6, borderRadius: 3, background: 'var(--bg-secondary)',
-          overflow: 'hidden', marginBottom: 10,
-        }}>
-          <div style={{
-            height: '100%', width: `${soc}%`,
-            background: soc > 50 ? '#22c55e' : soc > 20 ? '#f59e0b' : '#ef4444',
-            transition: 'width 0.4s',
-          }} />
-        </div>
-      )}
-
-      {/* Watts row */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        fontSize: 11, fontFamily: 'var(--font-mono)',
-        color: 'var(--text-secondary)',
-      }}>
-        <span>↓ {inW}W in</span>
-        <span style={{ color: 'var(--text-tertiary)' }}>
-          {device.model}
+      {/* Center row: watts + large SOC */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+        <span style={{ font: '500 15px var(--font-mono)', color: 'var(--text-secondary)', flex: 1 }}>
+          ↓ {inW}W in
         </span>
-        <span>↑ {outW}W out</span>
+        {hasBattery && soc != null ? (
+          <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, color: accent, lineHeight: 1, display: 'inline-flex', alignItems: 'baseline' }}>
+            <span style={{ fontSize: 34 }}>{soc}</span>
+            <span style={{ fontSize: 18, marginLeft: 2 }}>%</span>
+          </span>
+        ) : null}
+        <span style={{ font: '500 15px var(--font-mono)', color: 'var(--text-secondary)', flex: 1, textAlign: 'right' }}>
+          ↑ {outW}W out
+        </span>
       </div>
 
       {lastUpdated && (
@@ -133,6 +124,20 @@ export function EcoflowDeviceCard({ device, onShowInfo }) {
           letterSpacing: '0.06em',
         }}>
           {relativeTime(lastUpdated)}
+        </div>
+      )}
+
+      {/* Battery strip — absolute at bottom */}
+      {hasBattery && soc != null && (
+        <div style={{
+          position: 'absolute', left: 0, right: 0, bottom: 0,
+          height: 5, background: 'rgba(255,255,255,0.04)',
+        }}>
+          <div style={{
+            height: '100%', width: `${soc}%`,
+            background: dotColor,
+            transition: 'width 0.4s, background 0.2s',
+          }} />
         </div>
       )}
     </div>

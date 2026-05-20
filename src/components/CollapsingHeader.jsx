@@ -31,6 +31,7 @@ export function CollapsingHeader({
   title,
   subtitle,
   uppercaseTitle = true,
+  inlineSubtitle = false,
   badge,
   gps,
   onOpenSettings,
@@ -114,12 +115,11 @@ export function CollapsingHeader({
         left: 0,
         right: 0,
         zIndex: 100,
-        background: 'var(--bg-primary)',
+        background: 'var(--header-bg)',
+        backdropFilter: 'blur(16px) saturate(140%)',
+        WebkitBackdropFilter: 'blur(16px) saturate(140%)',
+        borderBottom: '1px solid var(--header-border)',
         paddingTop: 'env(safe-area-inset-top)',
-        // Force a containing block to stabilize sticky on iOS Safari
-        willChange: 'transform',
-        // Don't let an upstream ancestor's transform collapse this element
-        isolation: 'isolate',
       }}
     >
       {/* Top row */}
@@ -150,50 +150,75 @@ export function CollapsingHeader({
 
         {/* Title block */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, minWidth: 0 }}>
-            <h1 style={{
-              margin: 0,
-              fontSize: titleSize, fontWeight: 800,
-              color: 'var(--text-primary)',
-              fontFamily: 'var(--font-body)',
-              letterSpacing: '0.02em', lineHeight: 1,
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-            }}>
-              {titleText}
-            </h1>
-
-            {gps && (
-              <span style={{
-                opacity: inlineGpsOpacity,
-                display: inlineGpsOpacity > 0 ? 'inline-flex' : 'none',
-                alignItems: 'center', gap: 5,
-                fontSize: 10, fontFamily: 'var(--font-mono)',
-                color: 'var(--text-secondary)',
-                letterSpacing: '0.06em',
-                flexShrink: 0,
+          {inlineSubtitle && subtitle ? (
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+              <h1 style={{
+                margin: 0,
+                fontSize: titleSize, fontWeight: 800,
+                color: 'var(--text-primary)',
+                fontFamily: 'var(--font-body)',
+                letterSpacing: '0.02em', lineHeight: 1,
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
               }}>
-                <span style={{
-                  width: 6, height: 6, borderRadius: '50%',
-                  background: gpsDotColor,
-                }} />
-                {gpsInlineLabel}
-              </span>
-            )}
-          </div>
-
-          {subtitle && (
-            <div style={{
-              fontSize: 13,
-              color: 'var(--text-secondary)',
-              fontFamily: 'var(--font-body)',
-              marginTop: 3,
-              opacity: subtitleOpacity,
-              height: subtitleOpacity > 0 ? 'auto' : 0,
-              overflow: 'hidden',
-              whiteSpace: 'nowrap', textOverflow: 'ellipsis',
-            }}>
-              {subtitle}
+                {titleText}
+              </h1>
+              <span style={{
+                font: '400 10px var(--font-mono)',
+                color: 'rgba(var(--text-primary-rgb, 240,237,228), 0.78)',
+                letterSpacing: '0.10em',
+                whiteSpace: 'nowrap',
+                textShadow: '0 1px 4px rgba(0,0,0,0.4)',
+                flexShrink: 0,
+              }}>{subtitle}</span>
             </div>
+          ) : (
+            <>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, minWidth: 0 }}>
+                <h1 style={{
+                  margin: 0,
+                  fontSize: titleSize, fontWeight: 800,
+                  color: 'var(--text-primary)',
+                  fontFamily: 'var(--font-body)',
+                  letterSpacing: '0.02em', lineHeight: 1,
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>
+                  {titleText}
+                </h1>
+
+                {gps && (
+                  <span style={{
+                    opacity: inlineGpsOpacity,
+                    display: inlineGpsOpacity > 0 ? 'inline-flex' : 'none',
+                    alignItems: 'center', gap: 5,
+                    fontSize: 10, fontFamily: 'var(--font-mono)',
+                    color: 'var(--text-secondary)',
+                    letterSpacing: '0.06em',
+                    flexShrink: 0,
+                  }}>
+                    <span style={{
+                      width: 6, height: 6, borderRadius: '50%',
+                      background: gpsDotColor,
+                    }} />
+                    {gpsInlineLabel}
+                  </span>
+                )}
+              </div>
+
+              {subtitle && (
+                <div style={{
+                  fontSize: 13,
+                  color: 'var(--text-secondary)',
+                  fontFamily: 'var(--font-body)',
+                  marginTop: 3,
+                  opacity: subtitleOpacity,
+                  height: subtitleOpacity > 0 ? 'auto' : 0,
+                  overflow: 'hidden',
+                  whiteSpace: 'nowrap', textOverflow: 'ellipsis',
+                }}>
+                  {subtitle}
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -226,7 +251,7 @@ export function CollapsingHeader({
             onClick={onOpenSettings}
             aria-label="Settings"
             style={{
-              width: 32, height: 32, borderRadius: 8,
+              width: 40, height: 40, borderRadius: 10,
               border: '1px solid var(--border)',
               background: 'transparent',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -237,7 +262,7 @@ export function CollapsingHeader({
             }}
             className="active:opacity-70 transition-opacity"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
                  stroke="currentColor" strokeWidth="2"
                  strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="3" />
