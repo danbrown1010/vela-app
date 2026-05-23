@@ -11,6 +11,7 @@ import BottomNav from './components/BottomNav'
 import HomePage from './pages/HomePage'
 import AuthPage from './pages/AuthPage'
 import DevRibbon from './components/DevRibbon'
+import ErrorBoundary from './components/ErrorBoundary'
 import BugReportButton from './components/BugReportButton'
 import { BackgroundProvider } from './contexts/BackgroundContext'
 import { HaTokenProvider, useHaToken } from './store/haTokenStore'
@@ -64,10 +65,10 @@ function AppContent() {
 
 export default function App() {
   return (
-    <>
+    <ErrorBoundary>
       <AppContent />
       <DevRibbon />
-    </>
+    </ErrorBoundary>
   )
 }
 
