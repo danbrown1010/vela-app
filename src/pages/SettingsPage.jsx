@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { IconChevronLeft, IconChevronRight, IconCheck, IconZap, IconMap, IconWifi, IconCog, IconBook, IconPaw } from '../components/icons'
 import { useAppStore } from '../store/index'
@@ -40,21 +40,49 @@ const HA_URL         = import.meta.env.VITE_HA_URL         || null
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SettingsPage({ onBack, onNavigateTab, onClose, embedded = false, pendingSection, onConsumePendingSection }) {
+  // ── All hooks must be declared before any early return ─────────────────────
   const [subPage, setSubPage] = useState(null)
   const { accent, setAccent, theme, setTheme, user, profile, isPro, signOut, petsEnabled, setPetsEnabled, tripLabels, setTripLabels } = useAppStore()
-
-  if (subPage === 'connectedApps') return <ConnectedAppsPage onBack={() => setSubPage(null)} onNavigateTab={onNavigateTab} />
 
   const [keySet, setKeySet]           = useState(() => !!localStorage.getItem('vela-anthropic-key'))
   const [apiKeyInput, setApiKeyInput] = useState('')
   const [keySaving, setKeySaving]     = useState(false)
   const [toast, setToast]             = useState('')
 
+  const [pets, setPets] = useState([])
+
+  const [updateFrequency, setUpdateFrequency] = useState(
+    () => localStorage.getItem('vela-position-frequency') ?? 'standard'
+  )
+  const [showProNote, setShowProNote]   = useState(false)
+  const [starlinkSheet, setStarlinkSheet] = useState(false)
+  const [haSheet, setHaSheet]             = useState(false)
+  const [ecoflowSheet, setEcoflowSheet]   = useState(false)
+  const [haUrl, setHaUrl]           = useState(() => localStorage.getItem('vela-ha-url') ?? '')
+  const [haSheetView, setHaSheetView] = useState('main') // 'main' | 'repair' | 'to-passphrase' | 'to-auto'
+  const [haNewPassphrase, setHaNewPassphrase] = useState('')
+  const [haNewConfirmPass, setHaNewConfirmPass] = useState('')
+  const [haSheetError, setHaSheetError] = useState(null)
+  const [haSheetSaving, setHaSheetSaving] = useState(false)
+  const haToken = useHaToken()
+
+  const [tripToggles, setTripToggles] = useState({
+    phaseAware:        true,
+    autoDetect:        true,
+    postTripReminders: true,
+  })
+  const [notifToggles, setNotifToggles] = useState({
+    fire:         true,
+    burnBan:      true,
+    privateLand:  true,
+    campsite:     false,
+    checkIn:      true,
+  })
+
   useEffect(() => {
     hasAnthropicKey(user?.id).then(setKeySet)
   }, [user?.id])
 
-  const [pets, setPets] = useState([])
   useEffect(() => {
     if (!user?.id) return
     supabase.from('pets').select('id,name,photo_url').eq('user_id', user.id).order('created_at', { ascending: true }).then(({ data }) => {
@@ -62,6 +90,24 @@ export default function SettingsPage({ onBack, onNavigateTab, onClose, embedded 
     })
   }, [user?.id])
 
+  useEffect(() => {
+    if (!pendingSection) return
+    if (pendingSection === 'starlink') {
+      setStarlinkSheet(true)
+      onConsumePendingSection?.()
+    } else if (pendingSection === 'ecoflow') {
+      setEcoflowSheet(true)
+      onConsumePendingSection?.()
+    } else if (pendingSection === 'home_assistant') {
+      setHaSheet(true)
+      onConsumePendingSection?.()
+    }
+  }, [pendingSection, onConsumePendingSection])
+
+  // ── Early exit for sub-pages (safe: all hooks are above) ───────────────────
+  if (subPage === 'connectedApps') return <ConnectedAppsPage onBack={() => setSubPage(null)} onNavigateTab={onNavigateTab} />
+
+  // ── Helper functions ────────────────────────────────────────────────────────
   const showToast = (msg) => {
     setToast(msg)
     setTimeout(() => setToast(''), 2500)
@@ -90,21 +136,6 @@ export default function SettingsPage({ onBack, onNavigateTab, onClose, embedded 
     showToast('API key removed')
   }
 
-  const [updateFrequency, setUpdateFrequency] = useState(
-    () => localStorage.getItem('vela-position-frequency') ?? 'standard'
-  )
-  const [showProNote, setShowProNote]   = useState(false)
-  const [starlinkSheet, setStarlinkSheet] = useState(false)
-  const [haSheet, setHaSheet]             = useState(false)
-  const [ecoflowSheet, setEcoflowSheet]   = useState(false)
-  const [haUrl, setHaUrl]           = useState(() => localStorage.getItem('vela-ha-url') ?? '')
-  const [haSheetView, setHaSheetView] = useState('main') // 'main' | 'repair' | 'to-passphrase' | 'to-auto'
-  const [haNewPassphrase, setHaNewPassphrase] = useState('')
-  const [haNewConfirmPass, setHaNewConfirmPass] = useState('')
-  const [haSheetError, setHaSheetError] = useState(null)
-  const [haSheetSaving, setHaSheetSaving] = useState(false)
-  const haToken = useHaToken()
-
   const closeHaSheet = () => {
     setHaSheet(false)
     setHaSheetView('main')
@@ -112,20 +143,6 @@ export default function SettingsPage({ onBack, onNavigateTab, onClose, embedded 
     setHaNewPassphrase('')
     setHaNewConfirmPass('')
   }
-
-  useEffect(() => {
-    if (!pendingSection) return
-    if (pendingSection === 'starlink') {
-      setStarlinkSheet(true)
-      onConsumePendingSection?.()
-    } else if (pendingSection === 'ecoflow') {
-      setEcoflowSheet(true)
-      onConsumePendingSection?.()
-    } else if (pendingSection === 'home_assistant') {
-      setHaSheet(true)
-      onConsumePendingSection?.()
-    }
-  }, [pendingSection, onConsumePendingSection])
 
   const handleFrequencyTap = (opt) => {
     if (opt.proOnly && !isPro) {
@@ -139,20 +156,6 @@ export default function SettingsPage({ onBack, onNavigateTab, onClose, embedded 
       setShowProNote(false)
     }
   }
-
-  const [tripToggles, setTripToggles] = useState({
-    phaseAware:        true,
-    autoDetect:        true,
-    postTripReminders: true,
-  })
-
-  const [notifToggles, setNotifToggles] = useState({
-    fire:         true,
-    burnBan:      true,
-    privateLand:  true,
-    campsite:     false,
-    checkIn:      true,
-  })
 
   const toggleTrip  = (k) => setTripToggles(p  => ({ ...p,  [k]: !p[k]  }))
   const toggleNotif = (k) => setNotifToggles(p => ({ ...p, [k]: !p[k] }))
