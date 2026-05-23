@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase } from '../lib/supabase'
 import { useTripPhase } from '../hooks/useTripPhase'
 import { useTripDocs } from '../hooks/useTripDocs'
@@ -581,10 +582,10 @@ function OnTripHome({ activeTrip, dayOf, daysRemaining, totalDays, onNavigateToD
       )}
 
       {/* Doc preview modal */}
-      {previewDoc && (
+      {previewDoc && createPortal(
         <div
           onClick={closePreview}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 100, display: 'flex', alignItems: 'flex-end' }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 200, display: 'flex', alignItems: 'flex-end' }}
         >
           <div
             onClick={e => e.stopPropagation()}
@@ -639,7 +640,8 @@ function OnTripHome({ activeTrip, dayOf, daysRemaining, totalDays, onNavigateToD
               Close
             </button>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   )
