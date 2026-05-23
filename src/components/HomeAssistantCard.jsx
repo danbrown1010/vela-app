@@ -1,11 +1,27 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useHomeAssistant } from '../hooks/useHomeAssistant'
 import { IconThermometer, IconLightbulb, IconRadio, IconMoon, IconCpu } from './icons'
+import { useSetRigStatus } from '../store/rigStatus'
+
+const HA_FRESHNESS_MS = 25000
 
 export default function HomeAssistantCard() {
   const ha = useHomeAssistant()
   const [activeSection, setActiveSection] = useState('climate')
   const [sysOpen, setSysOpen] = useState(false)
+  const setRigStatus = useSetRigStatus()
+
+  const configured = !!ha.token && !!ha.HA_URL
+  const age = ha.lastUpdated ? Date.now() - ha.lastUpdated.getTime() : Infinity
+  const envStatus =
+    !configured ? 'unconfigured'
+    : (ha.lastError || !ha.connected) ? 'offline'
+    : ha.lastUpdated && age < HA_FRESHNESS_MS ? 'connected'
+    : 'offline'
+
+  useEffect(() => {
+    setRigStatus('env', envStatus)
+  }, [envStatus, setRigStatus])
 
   if (!ha.token) {
     return (

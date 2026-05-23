@@ -1,16 +1,19 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { IconRefresh } from '../components/icons'
 import { useAppStore } from '../store/index'
 import { CollapsingHeader } from '../components/CollapsingHeader'
 import { useFleet } from '../hooks/useFleet'
 import { supabase } from '../lib/supabase'
 import { StatusBadge } from '../components/StatusBadge'
+import { StatusPill } from '../components/StatusPill'
 import HomeAssistantCard from '../components/HomeAssistantCard'
 import { CommunicationsSection } from './CommunicationsSection'
 import { EcoflowDeviceCard } from '../components/EcoflowDeviceCard'
 import { useEcoflowConfig } from '../hooks/useEcoflowConfig'
 import { useBatteries } from '../hooks/useBatteries'
 import { useEcoFlow } from '../hooks/useEcoFlow'
+import { RigStatusProvider, useRigStatus, useSetRigStatus } from '../store/rigStatus'
 
 // ─── Seed data ────────────────────────────────────────────────────────────────
 
@@ -59,6 +62,14 @@ const SCENES = {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function RigPage() {
+  return (
+    <RigStatusProvider>
+      <RigPageContent />
+    </RigStatusProvider>
+  )
+}
+
+function RigPageContent() {
   const [lights, setLights] = useState(INITIAL_LIGHTS)
   const [ecoInfo, setEcoInfo] = useState(null)
   const currentDevice = ecoInfo?.device
@@ -87,6 +98,7 @@ export default function RigPage() {
     if (!integrations[key]) toggleIntegration(key)
     setActiveIntegration(key)
   }
+  const { power, comms, env } = useRigStatus()
   const { accent, user, location, gpsStatus } = useAppStore()
 
   const toggleLight = (id) =>
@@ -158,32 +170,19 @@ export default function RigPage() {
         >
           <div style={{ display: 'flex', gap: 8, overflowX: 'auto', scrollbarWidth: 'none' }}>
             {[
-              { key: 'ecoflow',        label: 'Power'          },
-              { key: 'starlink',       label: 'Communications' },
-              { key: 'home_assistant', label: 'Environment'    },
-            ].map(intg => {
-              const isActive = activeIntegration === intg.key
-              const isOn = integrations[intg.key]
-              return (
-                <button
-                  key={intg.key}
-                  onClick={() => selectIntegration(intg.key)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 6,
-                    padding: '5px 14px', borderRadius: 20, flexShrink: 0,
-                    border: `1px solid ${isActive ? `${accent}99` : 'var(--border)'}`,
-                    background: isActive ? `${accent}22` : 'transparent',
-                    color: isActive ? accent : 'var(--text-secondary)',
-                    fontSize: 11, fontFamily: 'var(--font-mono)', letterSpacing: '0.04em',
-                    cursor: 'pointer',
-                    transition: 'background 0.15s, border-color 0.15s, color 0.15s',
-                  }}
-                >
-                  <div style={{ width: 6, height: 6, borderRadius: '50%', flexShrink: 0, transition: 'background 0.2s', background: isOn ? '#22c55e' : 'var(--border)' }} />
-                  {intg.label}
-                </button>
-              )
-            })}
+              { key: 'ecoflow',        label: 'Power',          status: power },
+              { key: 'starlink',       label: 'Communications', status: comms },
+              { key: 'home_assistant', label: 'Environment',    status: env   },
+            ].map(intg => (
+              <StatusPill
+                key={intg.key}
+                status={intg.status}
+                label={intg.label}
+                isActive={activeIntegration === intg.key}
+                onClick={() => selectIntegration(intg.key)}
+                accent={accent}
+              />
+            ))}
           </div>
         </CollapsingHeader>
       )}
@@ -202,7 +201,7 @@ export default function RigPage() {
         </div>
       </div>
 
-      {ecoInfo && (
+      {ecoInfo && createPortal(
         <>
           {/* Backdrop */}
           <div
@@ -211,7 +210,7 @@ export default function RigPage() {
               position: 'fixed',
               inset: 0,
               background: 'rgba(0,0,0,0.6)',
-              zIndex: 100,
+              zIndex: 200,
             }}
           />
 
@@ -224,7 +223,7 @@ export default function RigPage() {
             background: 'var(--bg-card)',
             borderRadius: '16px 16px 0 0',
             padding: '0 0 env(safe-area-inset-bottom)',
-            zIndex: 101,
+            zIndex: 201,
             maxHeight: '70vh',
             overflowY: 'auto',
           }}>
@@ -350,7 +349,8 @@ export default function RigPage() {
               </button>
             </div>
           </div>
-        </>
+        </>,
+        document.body,
       )}
     </div>
   )
@@ -359,9 +359,8 @@ export default function RigPage() {
 // ─── Home Assistant status card ───────────────────────────────────────────────
 
 function HomeAssistantSection({ vehicle, ha }) {
-  const haUrl   = localStorage.getItem('vela-ha-url')   ?? ''
-  const haToken = localStorage.getItem('vela-ha-token') ?? ''
-  const isConfigured = haUrl && haToken
+  const haUrl        = localStorage.getItem('vela-ha-url') ?? ''
+  const isConfigured = haUrl && ha.token
 
   if (!isConfigured) {
     return (
@@ -492,9 +491,27 @@ function TempZones({ haSensors = [] }) {
 
 // ─── EcoFlow ──────────────────────────────────────────────────────────────────
 
+const ECOFLOW_FRESHNESS_MS = 25000
+
 function EcoflowSection({ onShowInfo }) {
   const { user, accent } = useAppStore()
   const { featuredDevice, otherDevices, visibleDevices, loaded } = useEcoflowConfig(user?.id)
+  const setRigStatus = useSetRigStatus()
+
+  const [deviceStatuses, setDeviceStatuses] = useState({})
+  const reportDeviceStatus = useCallback((sn, status) => {
+    setDeviceStatuses(prev => prev[sn] === status ? prev : { ...prev, [sn]: status })
+  }, [])
+
+  const powerStatus = !loaded || visibleDevices.length === 0
+    ? 'unconfigured'
+    : Object.values(deviceStatuses).some(s => s === 'connected')
+    ? 'connected'
+    : 'offline'
+
+  useEffect(() => {
+    setRigStatus('power', powerStatus)
+  }, [powerStatus, setRigStatus])
 
   if (!loaded) {
     return (
@@ -554,6 +571,7 @@ function EcoflowSection({ onShowInfo }) {
         <EcoflowDeviceCard
           device={featuredDevice}
           onShowInfo={onShowInfo}
+          onStatus={reportDeviceStatus}
         />
       )}
 
@@ -571,6 +589,7 @@ function EcoflowSection({ onShowInfo }) {
                 device={device}
                 onTap={() => onShowInfo?.({ device })}
                 showDivider={idx < otherDevices.length - 1}
+                onStatus={reportDeviceStatus}
               />
             ))}
           </div>
@@ -610,9 +629,18 @@ function EcoflowSection({ onShowInfo }) {
 
 // ─── Compact row for "Other Devices" list ────────────────────────────────────
 
-function EcoflowCompactRow({ device, onTap, showDivider }) {
-  const { data, loading, error } = useEcoFlow(device.sn)
+function EcoflowCompactRow({ device, onTap, showDivider, onStatus }) {
+  const { data, loading, error, lastUpdated } = useEcoFlow(device.sn)
   const { accent } = useAppStore()
+
+  const deviceStatus =
+    error ? 'offline'
+    : lastUpdated && (Date.now() - lastUpdated.getTime()) < ECOFLOW_FRESHNESS_MS ? 'connected'
+    : 'offline'
+
+  useEffect(() => {
+    if (!loading) onStatus?.(device.sn, deviceStatus)
+  }, [deviceStatus, loading])
 
   const hasBattery = device.capacity > 0
   const soc = data?.soc
@@ -620,21 +648,22 @@ function EcoflowCompactRow({ device, onTap, showDivider }) {
   const outW = data?.totalOutputWatts ?? 0
   const netW = inW - outW
 
-  const dotColor = loading
-    ? 'var(--text-tertiary)'
-    : error
-    ? '#ef4444'
-    : netW > 0
-    ? '#22c55e'
-    : netW < 0
-    ? hasBattery && soc != null && soc < 20 ? '#ef4444' : '#f59e0b'
+  // 5W deadband matches EcoflowDeviceCard
+  const flowState = (loading || error) ? 'idle'
+    : netW > 5 ? 'charging'
+    : netW < -5 ? 'discharging'
+    : 'idle'
+
+  const dotColor = error ? '#ef4444'
+    : flowState === 'charging' ? 'var(--status-connected)'
+    : flowState === 'discharging' ? 'var(--status-warning)'
     : 'var(--text-tertiary)'
 
   const statusText = error
     ? 'Offline'
     : loading
     ? '…'
-    : netW === 0
+    : flowState === 'idle'
     ? 'Idle'
     : `↓${inW}W ↑${outW}W`
 

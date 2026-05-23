@@ -1,6 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useCommunications } from '../hooks/useCommunications'
 import { useAppStore } from '../store/index'
+import { useSetRigStatus } from '../store/rigStatus'
+
+const COMMS_FRESHNESS_MS = 25000
 
 // Slate AX (AXT1800) thresholds
 const THRESHOLDS = {
@@ -36,6 +39,18 @@ export function CommunicationsSection() {
     speedtestDown, speedtestUp, speedtestPing,
     refetch,
   } = useCommunications()
+  const setRigStatus = useSetRigStatus()
+
+  const age = lastUpdated ? Date.now() - lastUpdated.getTime() : Infinity
+  const commsStatus =
+    !isConfigured ? 'unconfigured'
+    : error && error !== 'Home Assistant not configured' ? 'offline'
+    : !error && age < COMMS_FRESHNESS_MS ? 'connected'
+    : 'offline'
+
+  useEffect(() => {
+    setRigStatus('comms', commsStatus)
+  }, [commsStatus, setRigStatus])
 
   const slateAdminUrl = 'http://192.168.8.1'
   const starlinkAppUrl = 'https://www.starlink.com/account/home'

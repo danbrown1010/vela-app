@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useHaToken } from '../store/haTokenStore'
 
 const HA_URL =
   localStorage.getItem('vela-ha-url') ||
@@ -10,9 +11,13 @@ export function useHomeAssistant() {
   const [connecting, setConnecting] = useState(true)
   const [entities, setEntities] = useState({})
   const [lastUpdated, setLastUpdated] = useState(null)
-  const [token, setToken] = useState(
-    localStorage.getItem('vela-ha-token') ?? ''
-  )
+  const [lastError, setLastError] = useState(null)
+  const { plaintextToken, status: haStatus, requestUnlock } = useHaToken()
+  const token = plaintextToken ?? ''
+
+  useEffect(() => {
+    if (haStatus === 'locked') requestUnlock()
+  }, [haStatus, requestUnlock])
 
   const headers = {
     'Authorization': `Bearer ${token}`,
@@ -88,8 +93,10 @@ export function useHomeAssistant() {
 
       setEntities(filtered)
       setLastUpdated(new Date())
+      setLastError(null)
     } catch (err) {
       console.error('HA entity load error:', err)
+      setLastError(err.message || 'Entity load failed')
     }
   }, [token])
 
@@ -166,18 +173,18 @@ export function useHomeAssistant() {
     connect()
 
     const keepAlive = setInterval(async () => {
-      if (!connected) return
       try {
         await fetch(`${HA_URL}/api/`, {
           headers,
           signal: AbortSignal.timeout(3000),
         })
       } catch (err) {
-        // Silently fail — full reconnect will handle it
+        setConnected(false)
+        setLastError(err.message || 'Connection lost')
       }
-    }, 20000)
+    }, 10000)
 
-    const refresh = setInterval(loadEntities, 45000)
+    const refresh = setInterval(loadEntities, 10000)
 
     return () => {
       clearInterval(keepAlive)
@@ -190,10 +197,6 @@ export function useHomeAssistant() {
     connecting,
     entities,
     token,
-    setToken: (t) => {
-      setToken(t)
-      localStorage.setItem('vela-ha-token', t)
-    },
     connect,
     callService,
     toggle,
@@ -203,6 +206,7 @@ export function useHomeAssistant() {
     getAttr,
     isOn,
     lastUpdated,
+    lastError,
     reload: loadEntities,
     HA_URL,
   }

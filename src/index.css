@@ -86,6 +86,12 @@
   --tracking-caps:  0.10em;
   --tracking-tight: -0.02em;
   --tracking-wide:  0.08em;
+
+  /* ── Rig status pill colors ─────────────────────────────────────────────── */
+  --status-connected:    #22c55e;
+  --status-offline:      #ef4444;
+  --status-unconfigured: var(--text-tertiary);
+  --status-warning:      #eab308;
 }
 
 /* ── Evergreen theme overrides (warm forest) ────────────────────────────────── */
@@ -215,6 +221,11 @@ html, body, #root {
 @keyframes slideOutRight {
   from { transform: translateX(0);    opacity: 1; }
   to   { transform: translateX(100%); opacity: 0; }
+}
+
+@keyframes slideUpSheet {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
 }
 
 @keyframes pulseLeft {

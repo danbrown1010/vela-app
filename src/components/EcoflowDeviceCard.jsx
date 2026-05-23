@@ -1,13 +1,25 @@
+import { useEffect } from 'react'
 import { useEcoFlow } from '../hooks/useEcoFlow'
 import { useAppStore } from '../store/index'
+
+const FRESHNESS_MS = 25000
 
 /**
  * Compact card for a single EcoFlow device. Replaces the chip+expanded-card
  * pattern. Designed to stack vertically with other devices.
  */
-export function EcoflowDeviceCard({ device, onShowInfo }) {
+export function EcoflowDeviceCard({ device, onShowInfo, onStatus }) {
   const { accent } = useAppStore()
   const { data, loading, error, lastUpdated } = useEcoFlow(device.sn)
+
+  const deviceStatus =
+    error ? 'offline'
+    : lastUpdated && (Date.now() - lastUpdated.getTime()) < FRESHNESS_MS ? 'connected'
+    : 'offline'
+
+  useEffect(() => {
+    if (!loading) onStatus?.(device.sn, deviceStatus)
+  }, [deviceStatus, loading])
 
   const hasBattery = device.capacity > 0
   const soc = data?.soc
@@ -16,30 +28,31 @@ export function EcoflowDeviceCard({ device, onShowInfo }) {
   const netW = inW - outW
   const remainMin = data?.remainTime
 
-  // Status dot color — 3-tier when discharging: green >50%, orange 20–50%, red <20%
-  const dotColor = loading
-    ? 'var(--text-tertiary)'
-    : error
-    ? '#ef4444'
-    : netW > 0
-    ? '#22c55e'                                              // charging
-    : netW < 0
-    ? soc == null || !hasBattery
-      ? '#f59e0b'
-      : soc < 20
-      ? '#ef4444'                                            // discharging critical
-      : soc < 50
-      ? '#f59e0b'                                            // discharging low
-      : '#22c55e'                                            // discharging healthy
-    : 'var(--text-tertiary)'                                 // idle
+  // 5W deadband — avoids flicker at near-zero net flow
+  const flowState = (loading || error) ? 'idle'
+    : netW > 5 ? 'charging'
+    : netW < -5 ? 'discharging'
+    : 'idle'
+
+  // Pulsing dot color — tracks charging direction only
+  const flowColor = flowState === 'charging' ? 'var(--status-connected)'
+    : flowState === 'discharging' ? 'var(--status-warning)'
+    : 'var(--text-tertiary)'
+
+  // Battery strip color — SOC-tiered to preserve low-battery warning
+  const batteryColor = (error || loading || soc == null || !hasBattery)
+    ? flowColor
+    : soc < 20 ? '#ef4444'
+    : soc < 50 ? '#f59e0b'
+    : '#22c55e'
 
   const statusLabel = loading
     ? 'Loading…'
     : error
     ? 'Offline'
-    : netW > 0
+    : flowState === 'charging'
     ? `Charging · +${netW}W`
-    : netW < 0
+    : flowState === 'discharging'
     ? `Discharging · ${netW}W`
     : 'Idle'
 
@@ -55,8 +68,8 @@ export function EcoflowDeviceCard({ device, onShowInfo }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginBottom: 14 }}>
         <div style={{
           width: 11, height: 11, borderRadius: '50%',
-          background: dotColor, flexShrink: 0,
-          animation: (netW !== 0 && !loading && !error) ? 'vela-soc-pulse 1.6s ease-in-out infinite' : 'none',
+          background: flowColor, flexShrink: 0,
+          animation: flowState !== 'idle' ? 'vela-soc-pulse 1.6s ease-in-out infinite' : 'none',
         }} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
@@ -139,7 +152,7 @@ export function EcoflowDeviceCard({ device, onShowInfo }) {
         }}>
           <div style={{
             height: '100%', width: `${soc}%`,
-            background: dotColor,
+            background: batteryColor,
             transition: 'width 0.4s, background 0.2s',
           }} />
         </div>
