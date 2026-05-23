@@ -7,6 +7,7 @@ import { UserAvatar } from '../components/UserAvatar'
 import { getFirstName } from '../utils/userHelpers'
 import { StatusBadge } from '../components/StatusBadge'
 import { useEcoflowConfig } from '../hooks/useEcoflowConfig'
+import { useHaToken } from '../store/haTokenStore'
 
 const CONNECTED_APPS = [
   { id: 'onx',      title: 'OnX Offroad', sub: 'Maps & route planning'  },
@@ -96,8 +97,21 @@ export default function SettingsPage({ onBack, onNavigateTab, onClose, embedded 
   const [starlinkSheet, setStarlinkSheet] = useState(false)
   const [haSheet, setHaSheet]             = useState(false)
   const [ecoflowSheet, setEcoflowSheet]   = useState(false)
-  const [haUrl, setHaUrl]     = useState(() => localStorage.getItem('vela-ha-url') ?? '')
-  const [haToken, setHaToken] = useState(() => localStorage.getItem('vela-ha-token') ?? '')
+  const [haUrl, setHaUrl]           = useState(() => localStorage.getItem('vela-ha-url') ?? '')
+  const [haSheetView, setHaSheetView] = useState('main') // 'main' | 'repair' | 'to-passphrase' | 'to-auto'
+  const [haNewPassphrase, setHaNewPassphrase] = useState('')
+  const [haNewConfirmPass, setHaNewConfirmPass] = useState('')
+  const [haSheetError, setHaSheetError] = useState(null)
+  const [haSheetSaving, setHaSheetSaving] = useState(false)
+  const haToken = useHaToken()
+
+  const closeHaSheet = () => {
+    setHaSheet(false)
+    setHaSheetView('main')
+    setHaSheetError(null)
+    setHaNewPassphrase('')
+    setHaNewConfirmPass('')
+  }
 
   useEffect(() => {
     if (!pendingSection) return
@@ -285,7 +299,7 @@ export default function SettingsPage({ onBack, onNavigateTab, onClose, embedded 
             />
           <IntegrationRow Icon={IconMap}   title="OnX Offroad"     sub="Maps & route planning"     badge={{ status: 'linked', label: 'LINKED' }} onTap={() => window.open('https://www.onxmaps.com/offroad/app', '_blank')} />
           <IntegrationRow Icon={IconBook}  title="Gaia GPS"        sub="Topo + satellite layers"   badge={{ status: 'linked', label: 'LINKED' }} onTap={() => window.open('https://www.gaiagps.com', '_blank')} />
-          <IntegrationRow Icon={IconCog}   title="Home Assistant"  sub="Vehicle sensors & network"  badge={{ status: HA_URL ? 'linked' : 'off', label: HA_URL ? 'CONFIGURED' : 'NOT SET' }} onTap={() => setHaSheet(true)} last />
+          <IntegrationRow Icon={IconCog}   title="Home Assistant"  sub="Vehicle sensors & network"  badge={haStatusBadge(haToken.status)} onTap={() => setHaSheet(true)} last />
         </Section>
 
         {/* ── Notifications ───────────────────────────────────────────────────── */}
@@ -454,49 +468,222 @@ export default function SettingsPage({ onBack, onNavigateTab, onClose, embedded 
 
       {/* ── Home Assistant bottom sheet ───────────────────────────────────────── */}
       {haSheet && (
-        <div onClick={() => setHaSheet(false)} style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-end' }}>
+        <div
+          onClick={closeHaSheet}
+          style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-end' }}
+        >
           <div onClick={e => e.stopPropagation()} style={{ width: '100%', background: 'var(--bg-card)', borderRadius: '20px 20px 0 0', border: '1px solid var(--border)', borderBottom: 'none', padding: '24px 20px', paddingBottom: 'calc(24px + env(safe-area-inset-bottom))' }}>
             <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--border)', margin: '0 auto 20px' }} />
-            <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-body)', marginBottom: 4 }}>Home Assistant</div>
-            <div style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', marginBottom: 20, lineHeight: 1.5 }}>Connect to your HA instance on the Chomp WiFi network.</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <input
-                value={haUrl}
-                onChange={e => setHaUrl(e.target.value)}
-                placeholder="http://homeassistant.local:8123"
-                style={{ width: '100%', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 10px', color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', fontSize: 12, outline: 'none', boxSizing: 'border-box' }}
-              />
-              <input
-                value={haToken}
-                onChange={e => setHaToken(e.target.value)}
-                placeholder="Long-lived access token"
-                type="password"
-                style={{ width: '100%', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 10px', color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', fontSize: 12, outline: 'none', boxSizing: 'border-box' }}
-              />
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button
-                  onClick={() => setHaSheet(false)}
-                  style={{ flex: 1, padding: 8, borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-secondary)', fontSize: 12, fontFamily: 'var(--font-body)', cursor: 'pointer' }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    localStorage.setItem('vela-ha-url', haUrl)
-                    localStorage.setItem('vela-ha-token', haToken)
-                    setHaSheet(false)
-                  }}
-                  style={{ flex: 2, padding: 8, borderRadius: 8, border: 'none', background: accent, color: '#fff', fontSize: 12, fontWeight: 600, fontFamily: 'var(--font-body)', cursor: 'pointer' }}
-                >
-                  Save
-                </button>
-              </div>
-            </div>
+
+            {/* ── Repair confirmation ── */}
+            {haSheetView === 'repair' ? (
+              <>
+                <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-body)', marginBottom: 4 }}>Re-pair with Home Assistant</div>
+                <div style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', marginBottom: 20, lineHeight: 1.5 }}>
+                  This will delete your encrypted token. You'll need to re-enter your HA token and choose a new security mode.
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={() => setHaSheetView('main')} style={haSheetSecondaryBtn}>Cancel</button>
+                  <button
+                    disabled={haSheetSaving}
+                    onClick={async () => {
+                      setHaSheetSaving(true)
+                      try {
+                        await haToken.clear()
+                        closeHaSheet()
+                      } catch (err) {
+                        setHaSheetError(err.message || 'Failed.')
+                      } finally {
+                        setHaSheetSaving(false)
+                      }
+                    }}
+                    style={{ ...haSheetPrimaryBtn('#ef4444'), flex: 2, opacity: haSheetSaving ? 0.5 : 1 }}
+                  >
+                    {haSheetSaving ? 'Clearing…' : 'Re-pair'}
+                  </button>
+                </div>
+              </>
+
+            ) : haSheetView === 'to-passphrase' ? (
+              // ── Switch auto → passphrase ──
+              <>
+                <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-body)', marginBottom: 4 }}>Add passphrase</div>
+                <div style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', marginBottom: 20, lineHeight: 1.5 }}>
+                  Set a passphrase. Your token will be re-encrypted so only you can decrypt it.
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <input
+                    type="password"
+                    value={haNewPassphrase}
+                    onChange={e => { setHaSheetError(null); setHaNewPassphrase(e.target.value) }}
+                    placeholder="New passphrase"
+                    autoFocus
+                    style={haSheetInput}
+                  />
+                  <input
+                    type="password"
+                    value={haNewConfirmPass}
+                    onChange={e => { setHaSheetError(null); setHaNewConfirmPass(e.target.value) }}
+                    placeholder="Confirm passphrase"
+                    style={haSheetInput}
+                  />
+                  {haSheetError && <div style={{ fontSize: 12, color: '#ef4444', fontFamily: 'var(--font-body)' }}>{haSheetError}</div>}
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button onClick={() => setHaSheetView('main')} style={haSheetSecondaryBtn}>Cancel</button>
+                    <button
+                      disabled={haSheetSaving}
+                      onClick={async () => {
+                        if (!haNewPassphrase) { setHaSheetError('Please enter a passphrase.'); return }
+                        if (haNewPassphrase !== haNewConfirmPass) { setHaSheetError('Passphrases do not match.'); return }
+                        setHaSheetSaving(true)
+                        try {
+                          await haToken.changeMode('passphrase', haNewPassphrase)
+                          closeHaSheet()
+                        } catch (err) {
+                          setHaSheetError(err.message || 'Failed to re-encrypt.')
+                        } finally {
+                          setHaSheetSaving(false)
+                        }
+                      }}
+                      style={{ ...haSheetPrimaryBtn(accent), flex: 2, opacity: haSheetSaving ? 0.5 : 1 }}
+                    >
+                      {haSheetSaving ? 'Saving…' : 'Add passphrase'}
+                    </button>
+                  </div>
+                </div>
+              </>
+
+            ) : haSheetView === 'to-auto' ? (
+              // ── Switch passphrase → auto ──
+              <>
+                <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-body)', marginBottom: 4 }}>Switch to no passphrase</div>
+                <div style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', marginBottom: 20, lineHeight: 1.5 }}>
+                  Your token will be re-encrypted without a passphrase. Vela will hold the key — token will auto-unlock on load.
+                </div>
+                {haSheetError && <div style={{ fontSize: 12, color: '#ef4444', fontFamily: 'var(--font-body)', marginBottom: 12 }}>{haSheetError}</div>}
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={() => setHaSheetView('main')} style={haSheetSecondaryBtn}>Cancel</button>
+                  <button
+                    disabled={haSheetSaving}
+                    onClick={async () => {
+                      setHaSheetSaving(true)
+                      try {
+                        await haToken.changeMode('auto')
+                        closeHaSheet()
+                      } catch (err) {
+                        setHaSheetError(err.message || 'Failed to re-encrypt.')
+                      } finally {
+                        setHaSheetSaving(false)
+                      }
+                    }}
+                    style={{ ...haSheetPrimaryBtn(accent), flex: 2, opacity: haSheetSaving ? 0.5 : 1 }}
+                  >
+                    {haSheetSaving ? 'Saving…' : 'Switch to no passphrase'}
+                  </button>
+                </div>
+              </>
+
+            ) : haToken.status === 'unconfigured' || haToken.status === 'error' || haToken.status === 'loading' ? (
+              // ── Unconfigured: URL + configure CTA ──
+              <>
+                <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-body)', marginBottom: 4 }}>Home Assistant</div>
+                <div style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', marginBottom: 20, lineHeight: 1.5 }}>Connect to your HA instance on the Chomp WiFi network.</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <input
+                    value={haUrl}
+                    onChange={e => setHaUrl(e.target.value)}
+                    placeholder="http://homeassistant.local:8123"
+                    style={haSheetInput}
+                  />
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button onClick={closeHaSheet} style={haSheetSecondaryBtn}>Cancel</button>
+                    <button
+                      onClick={() => {
+                        if (haUrl) localStorage.setItem('vela-ha-url', haUrl)
+                        closeHaSheet()
+                        window.dispatchEvent(new CustomEvent('vela:ha-setup-needed'))
+                      }}
+                      style={{ ...haSheetPrimaryBtn(accent), flex: 2 }}
+                    >
+                      Set up token security →
+                    </button>
+                  </div>
+                </div>
+              </>
+
+            ) : (
+              // ── Configured: mode info + switch + re-pair ──
+              <>
+                <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-body)', marginBottom: 4 }}>Home Assistant</div>
+                {haUrl && (
+                  <div style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)', marginBottom: 16 }}>{haUrl}</div>
+                )}
+                <div style={{ padding: '12px 14px', borderRadius: 10, background: 'var(--bg-secondary)', border: '1px solid var(--border)', marginBottom: 12 }}>
+                  <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-tertiary)', marginBottom: 4 }}>Token security</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'var(--font-body)', marginBottom: 6 }}>
+                    {haToken.mode === 'passphrase' ? 'Encrypted with passphrase' : 'Encrypted (no passphrase)'}
+                  </div>
+                  {haToken.mode === 'passphrase' ? (
+                    <button
+                      onClick={() => { setHaSheetError(null); setHaSheetView('to-auto') }}
+                      style={{ fontSize: 12, color: accent, fontFamily: 'var(--font-body)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                    >
+                      Switch to no passphrase
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => { setHaSheetError(null); setHaSheetView('to-passphrase') }}
+                      style={{ fontSize: 12, color: accent, fontFamily: 'var(--font-body)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                    >
+                      Add passphrase →
+                    </button>
+                  )}
+                </div>
+                {haSheetError && <div style={{ fontSize: 12, color: '#ef4444', fontFamily: 'var(--font-body)', marginBottom: 12 }}>{haSheetError}</div>}
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={closeHaSheet} style={haSheetSecondaryBtn}>Done</button>
+                  <button
+                    onClick={() => setHaSheetView('repair')}
+                    style={{ ...haSheetPrimaryBtn('#ef4444'), flex: 2 }}
+                  >
+                    Re-pair / Forget
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
     </div>
   )
+}
+
+// ─── HA sheet helpers ────────────────────────────────────────────────────────
+
+function haStatusBadge(status) {
+  if (status === 'unlocked') return { status: 'linked',   label: 'CONFIGURED' }
+  if (status === 'locked')   return { status: 'advisory', label: 'LOCKED' }
+  if (status === 'error')    return { status: 'danger',   label: 'ERROR' }
+  return { status: 'off', label: 'NOT SET' }
+}
+
+const haSheetInput = {
+  width: '100%', background: 'var(--bg-secondary)',
+  border: '1px solid var(--border)', borderRadius: 8,
+  padding: '8px 10px', color: 'var(--text-primary)',
+  fontFamily: 'var(--font-mono)', fontSize: 12, outline: 'none', boxSizing: 'border-box',
+}
+
+const haSheetPrimaryBtn = (bg) => ({
+  flex: 2, padding: 8, borderRadius: 8, border: 'none',
+  background: bg, color: '#fff',
+  fontSize: 12, fontWeight: 600, fontFamily: 'var(--font-body)', cursor: 'pointer',
+})
+
+const haSheetSecondaryBtn = {
+  flex: 1, padding: 8, borderRadius: 8,
+  border: '1px solid var(--border)', background: 'transparent',
+  color: 'var(--text-secondary)', fontSize: 12, fontFamily: 'var(--font-body)', cursor: 'pointer',
 }
 
 // ─── Theme cards ──────────────────────────────────────────────────────────────

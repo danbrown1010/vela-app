@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useHaToken } from '../store/haTokenStore'
 
 const POLL_MS = 30000
 
@@ -32,7 +33,8 @@ export function useBatteries() {
   const cancelRef = useRef(false)
 
   const haUrl = localStorage.getItem('vela-ha-url') ?? ''
-  const haToken = localStorage.getItem('vela-ha-token') ?? ''
+  const { plaintextToken } = useHaToken()
+  const haToken = plaintextToken ?? ''
   const isConfigured = !!(haUrl && haToken)
 
   const fetchAll = useCallback(async () => {

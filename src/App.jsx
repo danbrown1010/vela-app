@@ -10,7 +10,12 @@ import { syncGearToSupabase, deleteGearFromSupabase, syncTripToSupabase, deleteT
 import BottomNav from './components/BottomNav'
 import HomePage from './pages/HomePage'
 import AuthPage from './pages/AuthPage'
+import DevRibbon from './components/DevRibbon'
+import BugReportButton from './components/BugReportButton'
 import { BackgroundProvider } from './contexts/BackgroundContext'
+import { HaTokenProvider, useHaToken } from './store/haTokenStore'
+import { HaUnlockModal } from './components/HaUnlockModal'
+import { HaTokenSetupModal } from './components/HaTokenSetupModal'
 
 const TripPage         = lazy(() => import('./pages/TripPage'))
 const SafetyPage       = lazy(() => import('./pages/SafetyPage'))
@@ -28,7 +33,7 @@ const PetsPage         = lazy(() => import('./pages/PetsPage'))
 const GloveBoxPage     = lazy(() => import('./pages/GloveBoxPage'))
 const FleetPage        = lazy(() => import('./pages/FleetPage'))
 
-export default function App() {
+function AppContent() {
   const { user, profile, isPro, signInWithGoogle, signOut, loading: authLoading, notAllowed } = useAuth()
 
   if (authLoading) {
@@ -49,8 +54,20 @@ export default function App() {
 
   return (
     <AppProvider user={user} profile={profile} signOut={signOut} signInWithGoogle={signInWithGoogle}>
-      <AppShell user={user} />
+      <HaTokenProvider userId={user.id}>
+        <AppShell user={user} />
+      </HaTokenProvider>
+      <BugReportButton />
     </AppProvider>
+  )
+}
+
+export default function App() {
+  return (
+    <>
+      <AppContent />
+      <DevRibbon />
+    </>
   )
 }
 
@@ -58,6 +75,17 @@ function AppShell({ user }) {
   const { setSyncStatus, setProfile } = useAppStore()
   useSyncOnLogin(user, setSyncStatus)
   usePositionBroadcast()
+  const { migrationToken } = useHaToken()
+  const [haSetupOpen, setHaSetupOpen] = useState(false)
+  const [migrationDismissed, setMigrationDismissed] = useState(false)
+
+  useEffect(() => {
+    const handler = () => setHaSetupOpen(true)
+    window.addEventListener('vela:ha-setup-needed', handler)
+    return () => window.removeEventListener('vela:ha-setup-needed', handler)
+  }, [])
+
+  const showHaSetup = (migrationToken !== null && !migrationDismissed) || haSetupOpen
 
   const [toast, setToast] = useState(null)
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3500) }
@@ -278,6 +306,17 @@ function AppShell({ user }) {
         </>
       )}
       </Suspense>
+
+      <HaUnlockModal />
+      {showHaSetup && (
+        <HaTokenSetupModal
+          prefilledToken={migrationToken}
+          onClose={() => {
+            setHaSetupOpen(false)
+            if (migrationToken !== null) setMigrationDismissed(true)
+          }}
+        />
+      )}
     </div>
   )
 }
