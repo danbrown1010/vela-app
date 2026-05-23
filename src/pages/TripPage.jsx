@@ -1,10 +1,12 @@
 import { useRef, useState } from 'react'
-import { IconChevronRight } from '../components/icons'
+import { IconChevronRight, IconUpload } from '../components/icons'
 import Map, { Source, Layer, Marker } from 'react-map-gl/maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useAppStore } from '../store/index'
 import { useFireData } from '../hooks/useFireData'
 import { useTripDocs } from '../hooks/useTripDocs'
+import { useTracks } from '../hooks/useTracks'
+import { ImportTrackSheet } from '../components/ImportTrackSheet'
 
 const MAP_STYLE   = 'https://tiles.openfreemap.org/styles/liberty'
 const CURRENT_POS = [-120.8830, 47.4521]
@@ -31,16 +33,25 @@ const LAYER_CONFIG = [
 ]
 
 export default function TripPage() {
-  const { accent, location, activeTrip, user } = useAppStore()
+  const { accent, location, activeTrip, trips, user } = useAppStore()
   const { fires } = useFireData()
+  const { tracks, importTrack, removeTrack } = useTracks(user?.id, activeTrip?.id ?? null)
   const mapRef = useRef(null)
+  const hasFitTracksRef = useRef(false)
   const [layers,   setLayers]   = useState(() => Object.fromEntries(LAYER_CONFIG.map(l => [l.id, l.on])))
   const [expanded, setExpanded] = useState(false)
   const [previewDoc,    setPreviewDoc]    = useState(null)
   const urlCacheRef                       = useRef({})
   const [loadedDocIds,  setLoadedDocIds]  = useState(new Set())
+  const [showImport,    setShowImport]    = useState(false)
+  const [hiddenTracks,  setHiddenTracks]  = useState(new Set())
 
   const toggleLayer = id => setLayers(prev => ({ ...prev, [id]: !prev[id] }))
+  const toggleTrackVisibility = id => setHiddenTracks(prev => {
+    const next = new Set(prev)
+    next.has(id) ? next.delete(id) : next.add(id)
+    return next
+  })
 
   const recenter = () => {
     if (location && mapRef.current) {
@@ -98,6 +109,19 @@ export default function TripPage() {
             <WaypointPin label={`${wp.name} · ${wp.night}`} accent={accent} />
           </Marker>
         ))}
+
+        {/* Imported tracks */}
+        {tracks.filter(t => !hiddenTracks.has(t.id)).map(track => (
+          <Source key={track.id} id={`track-${track.id}`} type="geojson" data={track.geojson}>
+            <Layer
+              id={`track-line-${track.id}`}
+              type="line"
+              filter={['==', ['geometry-type'], 'LineString']}
+              paint={{ 'line-color': '#f97316', 'line-width': 3, 'line-opacity': 0.85 }}
+              layout={{ 'line-cap': 'round', 'line-join': 'round' }}
+            />
+          </Source>
+        ))}
       </Map>
 
       {/* ── Floating UI ──────────────────────────────────────────────────────── */}
@@ -105,7 +129,47 @@ export default function TripPage() {
       <LayerStrip layers={LAYER_CONFIG} active={layers} onToggle={toggleLayer} accent={accent} />
       <ZoomControls mapRef={mapRef} />
       <RecenterBtn onPress={recenter} accent={accent} />
-      <BottomSheet expanded={expanded} onToggle={() => setExpanded(e => !e)} accent={accent} activeTrip={activeTrip} user={user} setPreviewDoc={setPreviewDoc} urlCacheRef={urlCacheRef} setLoadedDocIds={setLoadedDocIds} />
+
+      {/* Import track button */}
+      <button
+        onClick={() => setShowImport(true)}
+        aria-label="Import track"
+        style={{
+          position: 'absolute', right: 16, top: 92,
+          width: 40, height: 40, borderRadius: 12,
+          background: 'var(--bg-card)', border: '1px solid var(--border)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: 'var(--text-secondary)', cursor: 'pointer',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+        }}
+      >
+        <IconUpload style={{ width: 18, height: 18 }} />
+      </button>
+
+      <BottomSheet
+        expanded={expanded}
+        onToggle={() => setExpanded(e => !e)}
+        accent={accent}
+        activeTrip={activeTrip}
+        user={user}
+        setPreviewDoc={setPreviewDoc}
+        urlCacheRef={urlCacheRef}
+        setLoadedDocIds={setLoadedDocIds}
+        tracks={tracks}
+        hiddenTracks={hiddenTracks}
+        onToggleTrack={toggleTrackVisibility}
+        onDeleteTrack={removeTrack}
+      />
+
+      {/* Import track sheet */}
+      <ImportTrackSheet
+        open={showImport}
+        onClose={() => setShowImport(false)}
+        onImport={importTrack}
+        trips={trips}
+        defaultTripId={activeTrip?.id ?? null}
+        accent={accent}
+      />
 
       {/* Doc preview modal */}
       {previewDoc && (
@@ -302,9 +366,10 @@ function RecenterBtn({ onPress, accent }) {
 
 // ─── Bottom sheet ─────────────────────────────────────────────────────────────
 
-function BottomSheet({ expanded, onToggle, accent, activeTrip, user, setPreviewDoc, urlCacheRef, setLoadedDocIds }) {
+function BottomSheet({ expanded, onToggle, accent, activeTrip, user, setPreviewDoc, urlCacheRef, setLoadedDocIds, tracks = [], hiddenTracks, onToggleTrack, onDeleteTrack }) {
   const { docs, loading: docsLoading, getDocUrl } = useTripDocs(activeTrip?.id, user?.id)
-  const [docsExpanded, setDocsExpanded] = useState(true)
+  const [docsExpanded,   setDocsExpanded]   = useState(true)
+  const [tracksExpanded, setTracksExpanded] = useState(true)
 
   return (
     <div
@@ -356,6 +421,68 @@ function BottomSheet({ expanded, onToggle, accent, activeTrip, user, setPreviewD
             <IconChevronRight style={{ width: 16, height: 16, color: 'var(--text-tertiary)', flexShrink: 0 }} />
           </div>
         ))}
+
+        {/* Imported tracks */}
+        {tracks.length > 0 && (
+          <div style={{ marginTop: 16 }}>
+            <button
+              onClick={() => setTracksExpanded(e => !e)}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', background: 'none', border: 'none', padding: '0 0 8px', cursor: 'pointer' }}
+            >
+              <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ width: 12, height: 12 }}>
+                  <path d="M3 12h18M3 6l9-3 9 3M3 18l9 3 9-3"/>
+                </svg>
+                Tracks · {tracks.length}
+              </div>
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"
+                style={{ width: 12, height: 12, transform: tracksExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+
+            {tracksExpanded && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {tracks.map(track => {
+                  const isHidden = hiddenTracks?.has(track.id)
+                  const distKm = (track.distance_m / 1000).toFixed(1)
+                  return (
+                    <div key={track.id} style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ width: 10, height: 10, borderRadius: '50%', background: isHidden ? 'var(--border)' : '#f97316', flexShrink: 0 }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', fontFamily: 'var(--font-body)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{track.name}</div>
+                        <div style={{ fontSize: 10, color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', marginTop: 1 }}>
+                          {distKm} km · {track.point_count.toLocaleString()} pts · {track.source_format.toUpperCase()}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => onToggleTrack?.(track.id)}
+                        style={{ width: 28, height: 28, borderRadius: 7, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
+                        aria-label={isHidden ? 'Show track' : 'Hide track'}
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ width: 13, height: 13 }}>
+                          {isHidden
+                            ? <><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></>
+                            : <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></>
+                          }
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => onDeleteTrack?.(track.id)}
+                        style={{ width: 28, height: 28, borderRadius: 7, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
+                        aria-label="Delete track"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ width: 13, height: 13 }}>
+                          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
+                        </svg>
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Trip Documents */}
         {(docs.length > 0 || docsLoading) && (

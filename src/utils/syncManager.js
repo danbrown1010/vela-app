@@ -125,3 +125,51 @@ export async function bulkSyncGearToSupabase(items, userId) {
   if (error) console.error('Bulk gear sync error:', error)
   return { data, error }
 }
+
+// ─── TRACKS ───────────────────────────────────────────────────────────────────
+
+export async function syncTrackToSupabase(track, userId) {
+  const row = {
+    id:                       track.id,
+    user_id:                  userId,
+    trip_id:                  track.trip_id ?? null,
+    name:                     track.name,
+    source_format:            track.source_format,
+    source_file_path:         track.source_file_path ?? null,
+    geojson:                  track.geojson,
+    point_count:              track.point_count ?? 0,
+    simplified:               track.simplified ?? false,
+    simplification_tolerance: track.simplification_tolerance ?? null,
+    distance_m:               track.distance_m,
+    bbox:                     track.bbox,
+    updated_at:               new Date().toISOString(),
+  }
+
+  const { data, error } = await supabase
+    .from('tracks')
+    .upsert(row, { onConflict: 'id' })
+
+  if (error) console.error('Track sync error:', error)
+  return { data, error }
+}
+
+export async function fetchTracksFromSupabase(userId) {
+  const { data, error } = await supabase
+    .from('tracks')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+
+  if (error) console.error('Track fetch error:', error)
+  return data ?? []
+}
+
+export async function deleteTrackFromSupabase(trackId) {
+  const { error } = await supabase
+    .from('tracks')
+    .delete()
+    .eq('id', trackId)
+
+  if (error) console.error('Track delete error:', error)
+  return { error }
+}
