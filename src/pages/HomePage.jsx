@@ -5,7 +5,6 @@ import { useTripDocs } from '../hooks/useTripDocs'
 import { useAppStore } from '../store/index'
 import { getGearItems } from '../utils/gearStorage'
 import { Skeleton } from '../components/Skeleton'
-import { VelaLogo } from '../components/VelaLogo'
 import { StatusBadge } from '../components/StatusBadge'
 import { CollapsingHeader } from '../components/CollapsingHeader'
 import { getFirstName } from '../utils/userHelpers'
@@ -149,11 +148,8 @@ function IdleHome({ onPlanTrip, onEditTrip, onNavigateToDocs }) {
   return (
     <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', height: '100%' }}>
       <CollapsingHeader
-        image={{ src: '/vela-mark.png', alt: 'VELA', shape: 'square' }}
-        title="VELA"
+        image={{ src: '/vela-lockup.png', alt: 'VELA', shape: 'wide' }}
         subtitle="GO FURTHER."
-        uppercaseTitle={false}
-        inlineSubtitle={true}
         gps={{ state: gpsState, accuracyM: gpsAccuracyM }}
         onOpenSettings={() => window.dispatchEvent(new CustomEvent('vela:open-settings', { detail: {} }))}
       />

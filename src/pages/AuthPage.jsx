@@ -1,4 +1,3 @@
-import { VelaLogo } from '../components/VelaLogo'
 import RotatingBackground from '../components/RotatingBackground'
 
 const OVERLAY = `linear-gradient(
@@ -35,7 +34,7 @@ export default function AuthPage({ onSignIn, notAllowed = false }) {
       }}>
         {/* VELA logo — absolute top-left */}
         <a href="https://www.vela-go.com" style={{ position: 'absolute', top: 44, left: 24, zIndex: 3, color: 'var(--text-primary)', textDecoration: 'none' }}>
-          <VelaLogo size={30} textShadow="0 1px 8px rgba(0,0,0,0.5)" />
+          <img src="/vela-lockup.png" alt="VELA" height={38} style={{ height: 38, width: 'auto', maxWidth: 'none', display: 'block', filter: 'drop-shadow(0 1px 8px rgba(0,0,0,0.5))' }} />
         </a>
 
         {/* Tag */}

@@ -138,14 +138,35 @@ export function CollapsingHeader({
             {image.node}
           </div>
         ) : image?.src ? (
-          <img
-            src={image.src}
-            alt={image.alt ?? ''}
-            style={{
-              width: photoSize, height: photoSize, borderRadius: radius,
-              objectFit: 'cover', flexShrink: 0,
-            }}
-          />
+          image.shape === 'wide' && subtitle && !title ? (
+            <div style={{ display: 'inline-flex', alignItems: 'flex-end', gap: 10, flexShrink: 0 }}>
+              <img
+                src={image.src}
+                alt={image.alt ?? ''}
+                style={{ height: photoSize * 0.65, width: 'auto', display: 'block', flexShrink: 0 }}
+              />
+              <span style={{
+                font: '400 10px var(--font-mono)',
+                color: 'var(--text-tertiary)',
+                letterSpacing: '0.10em',
+                whiteSpace: 'nowrap',
+                paddingBottom: 5,
+                opacity: subtitleOpacity,
+                flexShrink: 0,
+              }}>{subtitle}</span>
+            </div>
+          ) : (
+            <img
+              src={image.src}
+              alt={image.alt ?? ''}
+              style={image.shape === 'wide' ? {
+                height: photoSize * 0.65, width: 'auto', display: 'block', flexShrink: 0,
+              } : {
+                width: photoSize, height: photoSize, borderRadius: radius,
+                objectFit: 'cover', flexShrink: 0,
+              }}
+            />
+          )
         ) : null}
 
         {/* Title block */}
@@ -173,38 +194,40 @@ export function CollapsingHeader({
             </div>
           ) : (
             <>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, minWidth: 0 }}>
-                <h1 style={{
-                  margin: 0,
-                  fontSize: titleSize, fontWeight: 800,
-                  color: 'var(--text-primary)',
-                  fontFamily: 'var(--font-body)',
-                  letterSpacing: '0.02em', lineHeight: 1,
-                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                }}>
-                  {titleText}
-                </h1>
-
-                {gps && (
-                  <span style={{
-                    opacity: inlineGpsOpacity,
-                    display: inlineGpsOpacity > 0 ? 'inline-flex' : 'none',
-                    alignItems: 'center', gap: 5,
-                    fontSize: 10, fontFamily: 'var(--font-mono)',
-                    color: 'var(--text-secondary)',
-                    letterSpacing: '0.06em',
-                    flexShrink: 0,
+              {title && (
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, minWidth: 0 }}>
+                  <h1 style={{
+                    margin: 0,
+                    fontSize: titleSize, fontWeight: 800,
+                    color: 'var(--text-primary)',
+                    fontFamily: 'var(--font-body)',
+                    letterSpacing: '0.02em', lineHeight: 1,
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}>
-                    <span style={{
-                      width: 6, height: 6, borderRadius: '50%',
-                      background: gpsDotColor,
-                    }} />
-                    {gpsInlineLabel}
-                  </span>
-                )}
-              </div>
+                    {titleText}
+                  </h1>
 
-              {subtitle && (
+                  {gps && (
+                    <span style={{
+                      opacity: inlineGpsOpacity,
+                      display: inlineGpsOpacity > 0 ? 'inline-flex' : 'none',
+                      alignItems: 'center', gap: 5,
+                      fontSize: 10, fontFamily: 'var(--font-mono)',
+                      color: 'var(--text-secondary)',
+                      letterSpacing: '0.06em',
+                      flexShrink: 0,
+                    }}>
+                      <span style={{
+                        width: 6, height: 6, borderRadius: '50%',
+                        background: gpsDotColor,
+                      }} />
+                      {gpsInlineLabel}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {subtitle && !(image?.shape === 'wide' && !title) && (
                 <div style={{
                   fontSize: 13,
                   color: 'var(--text-secondary)',
