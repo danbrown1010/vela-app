@@ -341,6 +341,7 @@ function AppShell({ user }) {
           user={user}
           onClose={() => setShowSyncPanel(false)}
           onRetry={() => runLoginSync(user, setSyncStatus, showToast)}
+          showToast={showToast}
         />
       )}
     </div>

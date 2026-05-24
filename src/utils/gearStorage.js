@@ -145,6 +145,26 @@ export async function clearGearPendingSync() {
   emitSyncChanged()
 }
 
+export async function clearGearItemPendingSync(id) {
+  const db = await getGearDB()
+  const item = await db.get('gear', id)
+  if (item?.pending_sync) {
+    await db.put('gear', { ...item, pending_sync: false })
+    emitSyncChanged()
+  }
+}
+
+// Save a server-fetched item locally without triggering a Supabase round-trip.
+// Always marks pending_sync=false — these items are already server-authoritative.
+export async function saveGearItemLocal(item) {
+  const db = await getGearDB()
+  await db.put('gear', {
+    ...item,
+    id: isValidUUID(item.id) ? item.id : uuidv4(),
+    pending_sync: false,
+  })
+}
+
 export async function getGearSummary() {
   const items = await getGearItems()
   if (items.length === 0) return null

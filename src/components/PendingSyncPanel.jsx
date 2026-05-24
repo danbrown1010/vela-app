@@ -11,7 +11,7 @@ const TYPE_LABELS = {
   'trip-delete': 'Trip delete',
 }
 
-export default function PendingSyncPanel({ user, onClose, onRetry }) {
+export default function PendingSyncPanel({ user, onClose, onRetry, showToast }) {
   const count = usePendingSyncCount()
   const [items, setItems]       = useState([])
   const [lastSync, setLastSync] = useState(null)
@@ -33,7 +33,22 @@ export default function PendingSyncPanel({ user, onClose, onRetry }) {
     if (retrying || !user) return
     setRetrying(true)
     try {
-      await onRetry?.()
+      const result = await onRetry?.()
+      if (!result) return
+      const { succeeded, failed, offline, unexpected } = result
+      if (offline) {
+        showToast?.('Offline — connect to sync')
+      } else if (!unexpected) {
+        // unexpected=true means onError already fired a toast; avoid doubling up
+        if (failed === 0 && succeeded > 0) {
+          showToast?.(`Synced ${succeeded} item${succeeded === 1 ? '' : 's'}`)
+        } else if (succeeded === 0 && failed > 0) {
+          showToast?.(`Sync failed for ${failed} item${failed === 1 ? '' : 's'}`)
+        } else if (succeeded > 0 && failed > 0) {
+          showToast?.(`Synced ${succeeded}, ${failed} failed`)
+        }
+        // succeeded === 0 && failed === 0: nothing was pending, no toast
+      }
     } finally {
       setRetrying(false)
     }
