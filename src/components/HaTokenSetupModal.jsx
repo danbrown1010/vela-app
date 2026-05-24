@@ -2,19 +2,15 @@ import { useState } from 'react'
 import { useHaToken } from '../store/haTokenStore'
 import { useAppStore } from '../store/index'
 
-// Handles both first-time setup (prefilledToken=null, shows token input) and
-// localStorage migration (prefilledToken=existing token string, hides token input).
-export function HaTokenSetupModal({ prefilledToken, onClose }) {
+export function HaTokenSetupModal({ onClose }) {
   const { setToken } = useHaToken()
   const { accent } = useAppStore()
   const [selectedMode, setSelectedMode] = useState('passphrase')
-  const [tokenInput, setTokenInput] = useState(prefilledToken ?? '')
+  const [tokenInput, setTokenInput] = useState('')
   const [passphrase, setPassphrase] = useState('')
   const [confirmPass, setConfirmPass] = useState('')
   const [saving, setSaving] = useState(false)
   const [localError, setLocalError] = useState(null)
-
-  const isMigration = prefilledToken != null
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -30,7 +26,6 @@ export function HaTokenSetupModal({ prefilledToken, onClose }) {
         mode: selectedMode,
         passphrase: selectedMode === 'passphrase' ? passphrase : undefined,
       })
-      if (isMigration) localStorage.removeItem('vela-ha-token')
       onClose()
     } catch (err) {
       setLocalError(err.message || 'Failed to save token.')
@@ -59,15 +54,13 @@ export function HaTokenSetupModal({ prefilledToken, onClose }) {
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {!isMigration && (
-            <input
-              value={tokenInput}
-              onChange={e => { setLocalError(null); setTokenInput(e.target.value) }}
-              placeholder="Long-lived access token"
-              type="password"
-              style={inputStyle}
-            />
-          )}
+          <input
+            value={tokenInput}
+            onChange={e => { setLocalError(null); setTokenInput(e.target.value) }}
+            placeholder="Long-lived access token"
+            type="password"
+            style={inputStyle}
+          />
 
           <ModeOption
             selected={selectedMode === 'passphrase'}
@@ -120,7 +113,7 @@ export function HaTokenSetupModal({ prefilledToken, onClose }) {
               onClick={onClose}
               style={{ flex: 1, padding: '10px 0', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-secondary)', fontSize: 14, fontFamily: 'var(--font-body)', cursor: 'pointer' }}
             >
-              {isMigration ? 'Later' : 'Cancel'}
+              Cancel
             </button>
             <button
               type="submit"

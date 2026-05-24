@@ -16,7 +16,7 @@ import BugReportButton from './components/BugReportButton'
 import PendingSyncIndicator from './components/PendingSyncIndicator'
 import PendingSyncPanel from './components/PendingSyncPanel'
 import { BackgroundProvider } from './contexts/BackgroundContext'
-import { HaTokenProvider, useHaToken } from './store/haTokenStore'
+import { HaTokenProvider } from './store/haTokenStore'
 import { HaUnlockModal } from './components/HaUnlockModal'
 import { HaTokenSetupModal } from './components/HaTokenSetupModal'
 import { runLoginSync } from './hooks/useSyncOnLogin'
@@ -83,9 +83,7 @@ function AppShell({ user }) {
 
   useSyncOnLogin(user, setSyncStatus, showToast)
   usePositionBroadcast()
-  const { migrationToken } = useHaToken()
   const [haSetupOpen, setHaSetupOpen] = useState(false)
-  const [migrationDismissed, setMigrationDismissed] = useState(false)
 
   useEffect(() => {
     const handler = () => setHaSetupOpen(true)
@@ -93,7 +91,7 @@ function AppShell({ user }) {
     return () => window.removeEventListener('vela:ha-setup-needed', handler)
   }, [])
 
-  const showHaSetup = (migrationToken !== null && !migrationDismissed) || haSetupOpen
+  const showHaSetup = haSetupOpen
 
   // Handle Stripe redirect returns
   useEffect(() => {
@@ -327,11 +325,7 @@ function AppShell({ user }) {
       <HaUnlockModal />
       {showHaSetup && (
         <HaTokenSetupModal
-          prefilledToken={migrationToken}
-          onClose={() => {
-            setHaSetupOpen(false)
-            if (migrationToken !== null) setMigrationDismissed(true)
-          }}
+          onClose={() => setHaSetupOpen(false)}
         />
       )}
 

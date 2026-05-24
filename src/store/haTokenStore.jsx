@@ -12,7 +12,6 @@ export function HaTokenProvider({ children, userId }) {
   const [status, setStatus] = useState('loading')
   const [error, setError] = useState(null)
   const [unlockRequested, setUnlockRequested] = useState(false)
-  const [migrationToken, setMigrationToken] = useState(null)
 
   const loadFromDb = useCallback(async () => {
     if (!userId) { setStatus('unconfigured'); return }
@@ -25,7 +24,6 @@ export function HaTokenProvider({ children, userId }) {
       if (dbErr) throw dbErr
 
       if (data?.ha_token_encrypted) {
-        localStorage.removeItem('vela-ha-token')
         const envelope = data.ha_token_encrypted
         setCipherEnvelope(envelope)
         const envelopeMode = (JSON.parse(envelope).mode) ?? 'passphrase'
@@ -45,8 +43,6 @@ export function HaTokenProvider({ children, userId }) {
           setStatus('locked')
         }
       } else {
-        const legacyToken = localStorage.getItem('vela-ha-token')
-        setMigrationToken(legacyToken ?? null)
         setStatus('unconfigured')
       }
     } catch (err) {
@@ -85,7 +81,6 @@ export function HaTokenProvider({ children, userId }) {
     setMode(newMode)
     setPlaintextToken(plaintext)
     setStatus('unlocked')
-    setMigrationToken(null)
     setError(null)
   }, [userId])
 
@@ -104,7 +99,6 @@ export function HaTokenProvider({ children, userId }) {
     setCipherEnvelope(null)
     setMode(null)
     setPlaintextToken(null)
-    setMigrationToken(null)
     setUnlockRequested(false)
     setError(null)
     setStatus('unconfigured')
@@ -128,7 +122,7 @@ export function HaTokenProvider({ children, userId }) {
   return (
     <HaTokenContext.Provider value={{
       cipherEnvelope, mode, plaintextToken, status, error,
-      unlockRequested, migrationToken,
+      unlockRequested,
       loadFromDb, unlock, setToken, changeMode, clear, forgetOnDevice, requestUnlock, setError,
     }}>
       {children}
@@ -140,7 +134,7 @@ export function useHaToken() {
   const ctx = useContext(HaTokenContext)
   if (!ctx) return {
     cipherEnvelope: null, mode: null, plaintextToken: null, status: 'unconfigured',
-    error: null, unlockRequested: false, migrationToken: null,
+    error: null, unlockRequested: false,
     loadFromDb: () => {}, unlock: () => {}, setToken: () => {}, changeMode: () => {},
     clear: () => {}, forgetOnDevice: () => {}, requestUnlock: () => {}, setError: () => {},
   }
