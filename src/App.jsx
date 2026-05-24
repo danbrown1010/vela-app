@@ -20,6 +20,8 @@ import { HaTokenProvider } from './store/haTokenStore'
 import { HaUnlockModal } from './components/HaUnlockModal'
 import { HaTokenSetupModal } from './components/HaTokenSetupModal'
 import { runLoginSync } from './hooks/useSyncOnLogin'
+import { RigStatusProvider } from './store/rigStatus'
+import { HaProbeRunner } from './components/HaProbeRunner'
 
 const TripPage         = lazy(() => import('./pages/TripPage'))
 const SafetyPage       = lazy(() => import('./pages/SafetyPage'))
@@ -208,6 +210,8 @@ function AppShell({ user }) {
   }, [user])
 
   return (
+    <RigStatusProvider>
+    <HaProbeRunner />
     <div style={{
       display: 'flex',
       flexDirection: 'column',
@@ -339,5 +343,6 @@ function AppShell({ user }) {
         />
       )}
     </div>
+    </RigStatusProvider>
   )
 }

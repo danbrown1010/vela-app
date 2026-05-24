@@ -11,16 +11,12 @@ import { EcoflowDeviceCard } from '../components/EcoflowDeviceCard'
 import { useEcoflowConfig } from '../hooks/useEcoflowConfig'
 import { useBatteries } from '../hooks/useBatteries'
 import { useEcoFlow } from '../hooks/useEcoFlow'
-import { RigStatusProvider, useRigStatus, useSetRigStatus } from '../store/rigStatus'
+import { useRigStatus, useSetRigStatus } from '../store/rigStatus'
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function RigPage() {
-  return (
-    <RigStatusProvider>
-      <RigPageContent />
-    </RigStatusProvider>
-  )
+  return <RigPageContent />
 }
 
 function RigPageContent() {
