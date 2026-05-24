@@ -1,4 +1,5 @@
 import { useAppStore } from '../store/index'
+import { IconPaw } from './icons'
 
 function TabIcon({ id, color }) {
   const stroke = {
@@ -48,15 +49,7 @@ function TabIcon({ id, color }) {
         </svg>
       )
     case 'pets':
-      return (
-        <svg width="26" height="26" viewBox="0 0 24 24" fill={color}>
-          <ellipse cx="6.5" cy="9" rx="1.7" ry="2.1"/>
-          <ellipse cx="10.5" cy="6" rx="1.55" ry="2.05"/>
-          <ellipse cx="14.5" cy="6" rx="1.55" ry="2.05"/>
-          <ellipse cx="18" cy="9" rx="1.7" ry="2.1"/>
-          <path d="M12 11c-2.8 0-5 2.2-5 4.9 0 2 1.8 4.1 5 4.1s5-2.1 5-4.1c0-2.7-2.2-4.9-5-4.9z"/>
-        </svg>
-      )
+      return <IconPaw size={22} color={color} />
     case 'more':
       return (
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round">
