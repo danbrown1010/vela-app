@@ -9,6 +9,16 @@ function toUUID(id) {
   return isValidUUID(id) ? id : uuidv4()
 }
 
+// A delete that finds no matching row is a success — the desired state
+// (row absent) is already true. PGRST116 is a PostgREST "no rows" code;
+// the string check is a defensive fallback in case the SDK changes.
+function isAlreadyGone(error) {
+  if (!error) return false
+  if (error.code === 'PGRST116') return true
+  if (error.message?.toLowerCase().includes('no rows')) return true
+  return false
+}
+
 function gearRow(item, userId) {
   return {
     id: toUUID(item.id),
@@ -74,13 +84,19 @@ export async function fetchTripsFromSupabase(userId) {
 }
 
 export async function deleteTripFromSupabase(tripId) {
+  // Non-UUID IDs (e.g. mock-*) never existed server-side — skip the call.
+  if (!isValidUUID(tripId)) return { error: null }
+
   const { error } = await supabase
     .from('trips')
     .delete()
     .eq('id', tripId)
 
-  if (error) console.error('Trip delete error:', error)
-  return { error }
+  if (error && !isAlreadyGone(error)) {
+    console.error('Trip delete error:', error)
+    return { error }
+  }
+  return { error: null }
 }
 
 // ─── GEAR ─────────────────────────────────────────────────────────────────────
@@ -106,13 +122,18 @@ export async function fetchGearFromSupabase(userId) {
 }
 
 export async function deleteGearFromSupabase(itemId) {
+  if (!isValidUUID(itemId)) return { error: null }
+
   const { error } = await supabase
     .from('gear_items')
     .delete()
     .eq('id', itemId)
 
-  if (error) console.error('Gear delete error:', error)
-  return { error }
+  if (error && !isAlreadyGone(error)) {
+    console.error('Gear delete error:', error)
+    return { error }
+  }
+  return { error: null }
 }
 
 export async function bulkSyncGearToSupabase(items, userId) {
@@ -165,11 +186,16 @@ export async function fetchTracksFromSupabase(userId) {
 }
 
 export async function deleteTrackFromSupabase(trackId) {
+  if (!isValidUUID(trackId)) return { error: null }
+
   const { error } = await supabase
     .from('tracks')
     .delete()
     .eq('id', trackId)
 
-  if (error) console.error('Track delete error:', error)
-  return { error }
+  if (error && !isAlreadyGone(error)) {
+    console.error('Track delete error:', error)
+    return { error }
+  }
+  return { error: null }
 }
