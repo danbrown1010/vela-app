@@ -3,7 +3,7 @@ import { useCommunications } from '../hooks/useCommunications'
 import { useAppStore } from '../store/index'
 import { useSetRigStatus } from '../store/rigStatus'
 
-const COMMS_FRESHNESS_MS = 25000
+const COMMS_FRESHNESS_MS = 45000
 
 // Slate AX (AXT1800) thresholds
 const THRESHOLDS = {

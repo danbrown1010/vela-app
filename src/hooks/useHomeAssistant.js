@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useHaToken } from '../store/haTokenStore'
+import { isOnWifi, onNetworkChange } from '../utils/networkType'
 
 export function useHomeAssistant() {
   const [connected, setConnected] = useState(false)
@@ -167,9 +168,15 @@ export function useHomeAssistant() {
   useEffect(() => {
     if (!token) return
 
-    connect()
+    if (isOnWifi()) {
+      connect()
+    } else {
+      setConnecting(false)
+    }
 
+    // Lightweight ping every 10s — only updates connected flag, no entity fetch.
     const keepAlive = setInterval(async () => {
+      if (document.visibilityState !== 'visible' || !isOnWifi()) return
       try {
         await fetch(`${HA_URL}/api/`, {
           headers,
@@ -181,11 +188,28 @@ export function useHomeAssistant() {
       }
     }, 10000)
 
-    const refresh = setInterval(loadEntities, 10000)
+    // Full entity refresh every 30s (heavier fetch, Wi-Fi only).
+    const refresh = setInterval(() => {
+      if (document.visibilityState !== 'visible' || !isOnWifi()) return
+      loadEntities()
+    }, 30000)
+
+    const handleResume = () => {
+      if (!isOnWifi()) {
+        setConnected(false)
+        setConnecting(false)
+        return
+      }
+      if (document.visibilityState === 'visible') connect()
+    }
+    document.addEventListener('visibilitychange', handleResume)
+    const removeNetListener = onNetworkChange(handleResume)
 
     return () => {
       clearInterval(keepAlive)
       clearInterval(refresh)
+      document.removeEventListener('visibilitychange', handleResume)
+      removeNetListener()
     }
   }, [token])
 

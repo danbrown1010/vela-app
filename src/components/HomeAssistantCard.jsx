@@ -3,7 +3,7 @@ import { useHomeAssistant } from '../hooks/useHomeAssistant'
 import { IconThermometer, IconLightbulb, IconRadio, IconMoon, IconCpu } from './icons'
 import { useSetRigStatus } from '../store/rigStatus'
 
-const HA_FRESHNESS_MS = 25000
+const HA_FRESHNESS_MS = 45000
 
 export default function HomeAssistantCard() {
   const ha = useHomeAssistant()

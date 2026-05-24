@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useHaToken } from '../store/haTokenStore'
+import { isOnWifi, onNetworkChange } from '../utils/networkType'
 
-const POLL_MS = 10000
+const POLL_MS = 30000
 
 const ENTITIES = {
   wifi:           'switch.gl_inet_axt1800_chomp_wifi',
@@ -77,11 +78,26 @@ export function useCommunications() {
 
   useEffect(() => {
     cancelRef.current = false
-    fetchAll()
-    const interval = setInterval(fetchAll, POLL_MS)
+
+    if (isOnWifi()) fetchAll()
+
+    const interval = setInterval(() => {
+      if (document.visibilityState !== 'visible' || !isOnWifi()) return
+      fetchAll()
+    }, POLL_MS)
+
+    const handleResume = () => {
+      if (!isOnWifi() || document.visibilityState !== 'visible') return
+      fetchAll()
+    }
+    document.addEventListener('visibilitychange', handleResume)
+    const removeNetListener = onNetworkChange(handleResume)
+
     return () => {
       cancelRef.current = true
       clearInterval(interval)
+      document.removeEventListener('visibilitychange', handleResume)
+      removeNetListener()
     }
   }, [fetchAll])
 
