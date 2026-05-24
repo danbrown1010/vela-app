@@ -13,10 +13,13 @@ import AuthPage from './pages/AuthPage'
 import DevRibbon from './components/DevRibbon'
 import ErrorBoundary from './components/ErrorBoundary'
 import BugReportButton from './components/BugReportButton'
+import PendingSyncIndicator from './components/PendingSyncIndicator'
+import PendingSyncPanel from './components/PendingSyncPanel'
 import { BackgroundProvider } from './contexts/BackgroundContext'
 import { HaTokenProvider, useHaToken } from './store/haTokenStore'
 import { HaUnlockModal } from './components/HaUnlockModal'
 import { HaTokenSetupModal } from './components/HaTokenSetupModal'
+import { runLoginSync } from './hooks/useSyncOnLogin'
 
 const TripPage         = lazy(() => import('./pages/TripPage'))
 const SafetyPage       = lazy(() => import('./pages/SafetyPage'))
@@ -76,6 +79,7 @@ function AppShell({ user }) {
   const { setSyncStatus, setProfile } = useAppStore()
   const [toast, setToast] = useState(null)
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3500) }
+  const [showSyncPanel, setShowSyncPanel] = useState(false)
 
   useSyncOnLogin(user, setSyncStatus, showToast)
   usePositionBroadcast()
@@ -184,6 +188,13 @@ function AppShell({ user }) {
     }
     window.addEventListener('vela:open-settings', handler)
     return () => window.removeEventListener('vela:open-settings', handler)
+  }, [])
+
+  // Handle vela:open-sync-panel deep-link from SettingsPage
+  useEffect(() => {
+    const handler = () => setShowSyncPanel(true)
+    window.addEventListener('vela:open-sync-panel', handler)
+    return () => window.removeEventListener('vela:open-sync-panel', handler)
   }, [])
 
   // Handle ?invite=xxx deep link
@@ -321,6 +332,15 @@ function AppShell({ user }) {
             setHaSetupOpen(false)
             if (migrationToken !== null) setMigrationDismissed(true)
           }}
+        />
+      )}
+
+      <PendingSyncIndicator onOpen={() => setShowSyncPanel(true)} />
+      {showSyncPanel && (
+        <PendingSyncPanel
+          user={user}
+          onClose={() => setShowSyncPanel(false)}
+          onRetry={() => runLoginSync(user, setSyncStatus, showToast)}
         />
       )}
     </div>

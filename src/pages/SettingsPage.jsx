@@ -8,6 +8,7 @@ import { getFirstName } from '../utils/userHelpers'
 import { StatusBadge } from '../components/StatusBadge'
 import { useEcoflowConfig } from '../hooks/useEcoflowConfig'
 import { useHaToken } from '../store/haTokenStore'
+import { usePendingSyncCount } from '../hooks/usePendingSync'
 
 const CONNECTED_APPS = [
   { id: 'onx',      title: 'OnX Offroad', sub: 'Maps & route planning'  },
@@ -65,6 +66,7 @@ export default function SettingsPage({ onBack, onNavigateTab, onClose, embedded 
   const [haSheetError, setHaSheetError] = useState(null)
   const [haSheetSaving, setHaSheetSaving] = useState(false)
   const haToken = useHaToken()
+  const pendingSyncCount = usePendingSyncCount()
 
   const [tripToggles, setTripToggles] = useState({
     phaseAware:        true,
@@ -214,6 +216,12 @@ export default function SettingsPage({ onBack, onNavigateTab, onClose, embedded 
             </div>
           </div>
           <AccountRow label="Active Vehicle"  value="2014 Jeep JKU — Chomp" />
+          <AccountRow
+            label="Sync Status"
+            value={pendingSyncCount > 0 ? `${pendingSyncCount} pending` : 'All synced'}
+            valueColor={pendingSyncCount > 0 ? 'var(--accent)' : undefined}
+            onTap={() => window.dispatchEvent(new CustomEvent('vela:open-sync-panel'))}
+          />
           <button
             className="w-full flex items-center px-4 py-3 active:opacity-70 transition-opacity"
             onClick={async () => {

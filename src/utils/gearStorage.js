@@ -51,15 +51,27 @@ export function removePendingDelete(id) {
 }
 
 const DB_NAME = 'vela-gear'
-const DB_VERSION = 1
+const DB_VERSION = 2
 
-async function getDB() {
+function emitSyncChanged() {
+  window.dispatchEvent(new CustomEvent('vela:sync-changed'))
+}
+
+export async function getGearDB() {
   return openDB(DB_NAME, DB_VERSION, {
-    upgrade(db) {
+    async upgrade(db, oldVersion, _newVersion, tx) {
       if (!db.objectStoreNames.contains('gear')) {
         const store = db.createObjectStore('gear', { keyPath: 'id' })
         store.createIndex('category', 'category')
         store.createIndex('onRig', 'onRig')
+      }
+      if (oldVersion < 2) {
+        const store = tx.objectStore('gear')
+        let cursor = await store.openCursor()
+        while (cursor) {
+          await cursor.update({ ...cursor.value, pending_sync: false })
+          cursor = await cursor.continue()
+        }
       }
     },
   })
@@ -70,8 +82,9 @@ export async function saveGearItem(item) {
     ...item,
     id: isValidUUID(item.id) ? item.id : uuidv4(),
   }
-  const db = await getDB()
-  await db.put('gear', itemWithUUID)
+  const db = await getGearDB()
+  await db.put('gear', { ...itemWithUUID, pending_sync: true })
+  emitSyncChanged()
 
   const { data: { session } } = await supabase.auth.getSession()
   if (session?.user) {
@@ -80,23 +93,25 @@ export async function saveGearItem(item) {
       addPendingSave(itemWithUUID)
     } else {
       removePendingSave(itemWithUUID.id)
+      await db.put('gear', { ...itemWithUUID, pending_sync: false })
+      emitSyncChanged()
     }
   }
 }
 
 export async function getGearItems() {
-  const db = await getDB()
+  const db = await getGearDB()
   return db.getAll('gear')
 }
 
 export async function getGearByCategory(category) {
-  const db = await getDB()
+  const db = await getGearDB()
   const index = db.transaction('gear').store.index('category')
   return index.getAll(category)
 }
 
 export async function deleteGearItem(id) {
-  const db = await getDB()
+  const db = await getGearDB()
   await db.delete('gear', id)
 
   try {
@@ -113,6 +128,21 @@ export async function deleteGearItem(id) {
     console.error('deleteGearItem sync error, queuing:', err)
     addPendingDelete(id)
   }
+  emitSyncChanged()
+}
+
+export async function clearGearPendingSync() {
+  const db = await getGearDB()
+  const tx = db.transaction('gear', 'readwrite')
+  let cursor = await tx.store.openCursor()
+  while (cursor) {
+    if (cursor.value.pending_sync) {
+      await cursor.update({ ...cursor.value, pending_sync: false })
+    }
+    cursor = await cursor.continue()
+  }
+  await tx.done
+  emitSyncChanged()
 }
 
 export async function getGearSummary() {

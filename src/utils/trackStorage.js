@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import { syncTrackToSupabase, deleteTrackFromSupabase } from './syncManager'
 
 const DB_NAME = 'vela-tracks'
-const DB_VERSION = 1
+const DB_VERSION = 2
 
 const PENDING_SAVES_KEY   = 'vela-pending-track-saves'
 const PENDING_DELETES_KEY = 'vela-pending-track-deletes'
@@ -48,13 +48,25 @@ export function removePendingTrackDelete(id) {
 
 // ── IndexedDB ────────────────────────────────────────────────────────────────
 
-async function getDB() {
+function emitSyncChanged() {
+  window.dispatchEvent(new CustomEvent('vela:sync-changed'))
+}
+
+export async function getTracksDB() {
   return openDB(DB_NAME, DB_VERSION, {
-    upgrade(db) {
+    async upgrade(db, oldVersion, _newVersion, tx) {
       if (!db.objectStoreNames.contains('tracks')) {
         const store = db.createObjectStore('tracks', { keyPath: 'id' })
-        store.createIndex('trip_id',  'trip_id')
-        store.createIndex('user_id',  'user_id')
+        store.createIndex('trip_id', 'trip_id')
+        store.createIndex('user_id', 'user_id')
+      }
+      if (oldVersion < 2) {
+        const store = tx.objectStore('tracks')
+        let cursor = await store.openCursor()
+        while (cursor) {
+          await cursor.update({ ...cursor.value, pending_sync: false })
+          cursor = await cursor.continue()
+        }
       }
     },
   })
@@ -62,8 +74,9 @@ async function getDB() {
 
 export async function saveTrack(track) {
   const trackWithId = { ...track, id: track.id ?? uuidv4() }
-  const db = await getDB()
-  await db.put('tracks', trackWithId)
+  const db = await getTracksDB()
+  await db.put('tracks', { ...trackWithId, pending_sync: true })
+  emitSyncChanged()
 
   const { data: { session } } = await supabase.auth.getSession()
   if (session?.user) {
@@ -72,6 +85,8 @@ export async function saveTrack(track) {
       addPendingTrackSave(trackWithId)
     } else {
       removePendingTrackSave(trackWithId.id)
+      await db.put('tracks', { ...trackWithId, pending_sync: false })
+      emitSyncChanged()
     }
   }
 
@@ -79,22 +94,22 @@ export async function saveTrack(track) {
 }
 
 export async function getTracks() {
-  const db = await getDB()
+  const db = await getTracksDB()
   return db.getAll('tracks')
 }
 
 export async function getTracksByTrip(tripId) {
-  const db = await getDB()
+  const db = await getTracksDB()
   return db.getAllFromIndex('tracks', 'trip_id', tripId)
 }
 
 export async function getTrack(id) {
-  const db = await getDB()
+  const db = await getTracksDB()
   return db.get('tracks', id)
 }
 
 export async function deleteTrack(id) {
-  const db = await getDB()
+  const db = await getTracksDB()
   await db.delete('tracks', id)
 
   try {
@@ -111,4 +126,19 @@ export async function deleteTrack(id) {
     console.error('deleteTrack sync error, queuing:', err)
     addPendingTrackDelete(id)
   }
+  emitSyncChanged()
+}
+
+export async function clearTracksPendingSync() {
+  const db = await getTracksDB()
+  const tx = db.transaction('tracks', 'readwrite')
+  let cursor = await tx.store.openCursor()
+  while (cursor) {
+    if (cursor.value.pending_sync) {
+      await cursor.update({ ...cursor.value, pending_sync: false })
+    }
+    cursor = await cursor.continue()
+  }
+  await tx.done
+  emitSyncChanged()
 }
