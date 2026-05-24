@@ -11,76 +11,6 @@ import { addPendingTripSave, removePendingTripSave, addPendingTripDelete, remove
 
 const AppContext = createContext(null)
 
-const MOCK_TRIPS = [
-  {
-    id: 'mock-1',
-    name: 'White Rim Road',
-    region: 'Canyonlands, UT',
-    departureDate: '2026-04-28',
-    returnDate: '2026-05-01',
-    status: 'completed',
-    type: 'Overlanding',
-    types: ['Overlanding'],
-    miles: 284,
-    nights: 3,
-    notes: 'Epic loop. Cache Valley camp was perfect.',
-    waypoints: [], campsites: [],
-  },
-  {
-    id: 'mock-2',
-    name: 'Methow High Country',
-    region: 'Okanogan-Wenatchee NF, WA',
-    departureDate: '2026-04-12',
-    returnDate: '2026-04-14',
-    status: 'completed',
-    type: 'Overlanding',
-    types: ['Overlanding', 'Photography'],
-    miles: 190,
-    nights: 2,
-    notes: 'Snow on Harts Pass. Wildflowers at Tiffany.',
-    waypoints: [], campsites: [],
-  },
-  {
-    id: 'mock-3',
-    name: 'Sun Lakes — Dry Falls',
-    region: 'Grant County, WA',
-    departureDate: '2026-03-21',
-    returnDate: '2026-03-22',
-    status: 'completed',
-    type: 'Photography',
-    types: ['Photography', 'Camping'],
-    miles: 110,
-    nights: 1,
-    notes: 'Great stargazing. Dry Falls at sunrise.',
-    waypoints: [], campsites: [],
-  },
-  {
-    id: 'mock-4',
-    name: 'Teanaway Country',
-    region: 'Kittitas County, WA',
-    departureDate: '2026-03-08',
-    returnDate: '2026-03-09',
-    status: 'completed',
-    type: 'Overlanding',
-    types: ['Overlanding', 'Hiking'],
-    miles: 145,
-    nights: 1,
-    notes: 'Beveridge Mine trail. Good early season conditions.',
-    waypoints: [], campsites: [],
-  },
-  {
-    id: 'mock-5',
-    name: 'Entiat River — Summer Run',
-    region: 'Chelan County, WA',
-    departureDate: '2026-06-14',
-    returnDate: '2026-06-17',
-    status: 'planning',
-    type: 'Overlanding',
-    types: ['Overlanding', 'Fishing'],
-    waypoints: [], campsites: [],
-  },
-]
-
 export function AppProvider({ children, user = null, profile = null, signOut = () => {}, signInWithGoogle = () => {} }) {
   const [profileState, setProfile] = useState(profile)
   useEffect(() => { if (profile !== undefined) setProfile(profile) }, [profile])
@@ -97,7 +27,7 @@ export function AppProvider({ children, user = null, profile = null, signOut = (
       })
   }, [user?.id])
 
-  const [trips, setTrips]         = useState(MOCK_TRIPS)
+  const [trips, setTrips]         = useState([])
   const [activeTrip, setActiveTrip] = useState(null)
   const [syncStatus, setSyncStatus] = useState('idle')
   const [accent, setAccentState]  = useState(() => localStorage.getItem('vela-accent') || '#f97316')
@@ -125,8 +55,7 @@ export function AppProvider({ children, user = null, profile = null, signOut = (
         campsites: t.campsites ?? [],
         ...(t.data ?? {}),
       }))
-      const mockCompleted = MOCK_TRIPS.filter(t => t.status === 'completed')
-      setTrips(real.length === 0 ? MOCK_TRIPS : [...real, ...mockCompleted])
+      setTrips(real)
     }).catch(console.error)
   }, [user?.id])
 
