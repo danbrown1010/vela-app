@@ -343,7 +343,7 @@ function PetSetupChat({ onBack, onComplete }) {
   if (phase === 'type-select') {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-primary)' }}>
-        <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+        <div style={{ paddingTop: 'max(12px, env(safe-area-inset-top))', paddingRight: '16px', paddingBottom: '12px', paddingLeft: '16px', borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
           <button onClick={onBack} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 20, padding: 0, lineHeight: 1, display: 'flex', alignItems: 'center' }}>←</button>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>
             New trail buddy
@@ -428,7 +428,7 @@ function PetSetupChat({ onBack, onComplete }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-primary)' }}>
       <div style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 'max(12px, env(safe-area-inset-top))', paddingRight: '16px', paddingBottom: '12px', paddingLeft: '16px' }}>
           <button
             onClick={onBack}
             style={{ width: 32, height: 32, borderRadius: '50%', border: '1px solid var(--border)', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
@@ -539,7 +539,7 @@ function PetProfile({ pet, onBack, onDeleted, onReOnboard, onUpdate }) {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-primary)' }}>
 
       {/* Header */}
-      <div style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)', flexShrink: 0, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)', flexShrink: 0, paddingTop: 'max(12px, env(safe-area-inset-top))', paddingRight: '16px', paddingBottom: '12px', paddingLeft: '16px', display: 'flex', alignItems: 'center', gap: 10 }}>
         <button onClick={onBack} style={{ width: 32, height: 32, borderRadius: '50%', border: '1px solid var(--border)', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
           <IconArrowLeft style={{ width: 16, height: 16, color: 'var(--text-secondary)' }} />
         </button>
@@ -668,7 +668,7 @@ function PetRoster({ pets, loading, onBack, onAddPet, onSelectPet }) {
   const { accent } = useAppStore()
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-primary)' }}>
-      <div style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)', flexShrink: 0, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)', flexShrink: 0, paddingTop: 'max(12px, env(safe-area-inset-top))', paddingRight: '16px', paddingBottom: '12px', paddingLeft: '16px', display: 'flex', alignItems: 'center', gap: 10 }}>
         {onBack && (
           <button onClick={onBack} style={{ width: 32, height: 32, borderRadius: '50%', border: '1px solid var(--border)', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
             <IconArrowLeft style={{ width: 16, height: 16, color: 'var(--text-secondary)' }} />

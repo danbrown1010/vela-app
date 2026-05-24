@@ -243,7 +243,7 @@ export default function TripPage() {
 
 function StatusStrip() {
   return (
-    <div style={{ position: 'absolute', top: 12, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 8, pointerEvents: 'none', zIndex: 10 }}>
+    <div style={{ position: 'absolute', top: 'calc(12px + env(safe-area-inset-top))', left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 8, pointerEvents: 'none', zIndex: 10 }}>
       {['DAY 1/3', 'LTE', '87%'].map(label => (
         <div
           key={label}
@@ -271,7 +271,7 @@ function StatusStrip() {
 function LayerStrip({ layers, active, onToggle, accent }) {
   return (
     <div
-      style={{ position: 'absolute', top: 52, left: 0, right: 0, display: 'flex', gap: 8, overflowX: 'auto', padding: '0 16px', scrollbarWidth: 'none' }}
+      style={{ position: 'absolute', top: 'calc(52px + env(safe-area-inset-top))', left: 0, right: 0, display: 'flex', gap: 8, overflowX: 'auto', padding: '0 16px', scrollbarWidth: 'none' }}
     >
       {layers.map(l => (
         <button

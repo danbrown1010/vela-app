@@ -85,7 +85,7 @@ export default function CreateTripPage({ onClose, onCreated }) {
 function StepHeader({ step, onBack, onNext, creating }) {
   const { accent } = useAppStore()
   return (
-    <div style={{ padding: '12px 16px 0', borderBottom: '1px solid var(--border)' }}>
+    <div style={{ paddingTop: 'max(12px, env(safe-area-inset-top))', paddingRight: '16px', paddingBottom: 0, paddingLeft: '16px', borderBottom: '1px solid var(--border)' }}>
       {/* Step counter */}
       <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>
         STEP {String(step).padStart(2, '0')} · OF 04

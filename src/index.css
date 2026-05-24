@@ -8,6 +8,12 @@
 :root {
   --vh: 1svh;
 
+  /* iOS safe-area convenience vars (fallback 0px for desktop/non-notch) */
+  --safe-top:    env(safe-area-inset-top,    0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left:   env(safe-area-inset-left,   0px);
+  --safe-right:  env(safe-area-inset-right,  0px);
+
   --font-body: 'Ubuntu', system-ui, sans-serif;
   --font-mono: 'Ubuntu Mono', monospace;
 

@@ -217,8 +217,6 @@ function AppShell({ user }) {
       flexDirection: 'column',
       background: 'var(--bg-primary)',
       height: 'calc(var(--vh, 1svh) * 100)',
-      paddingTop: 'env(safe-area-inset-top)',
-      paddingBottom: 'env(safe-area-inset-bottom)',
       position: 'relative',
     }}>
       {toast && (
