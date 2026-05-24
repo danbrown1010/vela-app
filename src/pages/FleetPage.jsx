@@ -390,7 +390,7 @@ function VehicleDetail({ vehicle, onBack, onUpdate, onDelete, user }) {
     return 'ok'
   }
 
-  const STATUS_COLORS = { overdue: '#8B2E2E', 'due-soon': 'var(--accent)', ok: 'var(--safe)', unknown: 'var(--text-tertiary)' }
+  const STATUS_COLORS = { overdue: 'var(--danger)', 'due-soon': 'var(--accent)', ok: 'var(--safe)', unknown: 'var(--text-tertiary)' }
   const STATUS_LABELS = { overdue: 'OVERDUE', 'due-soon': 'DUE SOON', ok: 'OK', unknown: '—' }
 
   const BUILD_SECTIONS = [
@@ -491,7 +491,7 @@ function VehicleDetail({ vehicle, onBack, onUpdate, onDelete, user }) {
             )}
 
             <button onClick={() => { if (confirm(`Remove ${vehicle.nickname || vehicle.make} from fleet?`)) onDelete(vehicle.id) }}
-              style={{ marginTop: 24, width: '100%', padding: 10, borderRadius: 8, border: '1px solid rgba(139,46,46,0.4)', background: 'transparent', color: '#8B2E2E', fontSize: 13, fontFamily: 'var(--font-body)', cursor: 'pointer' }}>
+              style={{ marginTop: 24, width: '100%', padding: 10, borderRadius: 8, border: '1px solid color-mix(in srgb, var(--danger) 40%, transparent)', background: 'transparent', color: 'var(--danger)', fontSize: 13, fontFamily: 'var(--font-body)', cursor: 'pointer' }}>
               Remove from fleet
             </button>
           </div>

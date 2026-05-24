@@ -14,14 +14,14 @@ const THRESHOLDS = {
 
 const SEVERITY_COLORS = {
   normal:   'var(--text-primary)',
-  warning:  '#f59e0b',
-  critical: '#ef4444',
+  warning:  'var(--status-warning)',
+  critical: 'var(--status-offline)',
 }
 
 const SEVERITY_DOT_COLORS = {
-  normal:   '#22c55e',
-  warning:  '#f59e0b',
-  critical: '#ef4444',
+  normal:   'var(--status-connected)',
+  warning:  'var(--status-warning)',
+  critical: 'var(--status-offline)',
 }
 
 function severityFor(value, { warning, critical }) {
@@ -92,7 +92,7 @@ export function CommunicationsSection() {
   if (error && !lastUpdated) {
     return (
       <Card title="Communications">
-        <Status dot="#ef4444" label="Home Assistant unreachable" sub={error} onRefresh={refetch} />
+        <Status dot="var(--status-offline)" label="Home Assistant unreachable" sub={error} onRefresh={refetch} />
       </Card>
     )
   }
@@ -103,7 +103,7 @@ export function CommunicationsSection() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
         <div style={{
           width: 8, height: 8, borderRadius: '50%',
-          background: wifiOn ? '#22c55e' : '#ef4444',
+          background: wifiOn ? 'var(--status-connected)' : 'var(--status-offline)',
           flexShrink: 0,
         }} />
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -114,7 +114,7 @@ export function CommunicationsSection() {
             Chomp Wifi{' '}
             <span style={{
               fontWeight: 400,
-              color: wifiOn ? 'var(--text-secondary)' : '#ef4444',
+              color: wifiOn ? 'var(--text-secondary)' : 'var(--status-offline)',
             }}>
               {wifiOn ? 'online' : 'offline'}
             </span>
@@ -134,13 +134,13 @@ export function CommunicationsSection() {
           style={{
             width: 32, height: 32, borderRadius: 8,
             border: `1px solid ${
-              systemHasCritical ? '#ef444466' :
-              systemHasWarning  ? '#f59e0b66' :
+              systemHasCritical ? 'color-mix(in srgb, var(--status-offline) 40%, transparent)' :
+              systemHasWarning  ? 'color-mix(in srgb, var(--status-warning) 40%, transparent)' :
                                    'var(--border)'
             }`,
             background: 'transparent',
-            color: systemHasCritical ? '#ef4444' :
-                   systemHasWarning  ? '#f59e0b' :
+            color: systemHasCritical ? 'var(--status-offline)' :
+                   systemHasWarning  ? 'var(--status-warning)' :
                                         'var(--text-secondary)',
             fontSize: 13, fontWeight: 700,
             fontFamily: 'var(--font-mono)',

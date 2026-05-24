@@ -76,7 +76,7 @@ export function HaTokenSetupModal({ prefilledToken, onClose }) {
             body={
               <span>
                 Only you can decrypt your token. Not even Vela can read it. You'll enter it once per session.{' '}
-                <span style={{ color: '#f59e0b' }}>⚠</span>{' '}
+                <span style={{ color: 'var(--status-warning)' }}>⚠</span>{' '}
                 Can't be recovered if forgotten — you'd re-pair with HA to reset.
               </span>
             }
@@ -111,7 +111,7 @@ export function HaTokenSetupModal({ prefilledToken, onClose }) {
           />
 
           {localError && (
-            <div style={{ fontSize: 12, color: '#ef4444', fontFamily: 'var(--font-body)' }}>{localError}</div>
+            <div style={{ fontSize: 12, color: 'var(--status-offline)', fontFamily: 'var(--font-body)' }}>{localError}</div>
           )}
 
           <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>

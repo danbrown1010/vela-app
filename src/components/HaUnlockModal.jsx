@@ -81,7 +81,7 @@ export function HaUnlockModal() {
               style={inputStyle}
             />
             {error && (
-              <div style={{ fontSize: 12, color: '#ef4444', fontFamily: 'var(--font-body)', marginTop: 8 }}>{error}</div>
+              <div style={{ fontSize: 12, color: 'var(--status-offline)', fontFamily: 'var(--font-body)', marginTop: 8 }}>{error}</div>
             )}
             <button
               type="submit"

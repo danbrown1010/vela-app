@@ -82,8 +82,8 @@ export function CollapsingHeader({
   const headerPaddingY   = lerp(16, 8, scrollProgress)
 
   const gpsDotColor =
-    gps?.state === 'locked'    ? '#22c55e' :
-    gps?.state === 'searching' ? '#f59e0b' :
+    gps?.state === 'locked'    ? 'var(--status-connected)' :
+    gps?.state === 'searching' ? 'var(--status-warning)' :
                                   'var(--text-tertiary)'
 
   const gpsLabel =
@@ -97,9 +97,9 @@ export function CollapsingHeader({
                                   'GPS —'
 
   const badgeColor =
-    badge?.tone === 'success' ? '#22c55e' :
-    badge?.tone === 'danger'  ? '#ef4444' :
-    badge?.tone === 'warn'    ? '#f59e0b' :
+    badge?.tone === 'success' ? 'var(--status-connected)' :
+    badge?.tone === 'danger'  ? 'var(--status-offline)' :
+    badge?.tone === 'warn'    ? 'var(--status-warning)' :
     badge?.tone === 'muted'   ? 'var(--text-tertiary)' :
                                  accent
 

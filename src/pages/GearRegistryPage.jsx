@@ -11,7 +11,7 @@ const CONDITIONS = ['good', 'worn', 'replace']
 const CONDITION_COLORS = {
   good:    'var(--safe)',
   worn:    'var(--accent)',
-  replace: '#ef4444',
+  replace: 'var(--status-offline)',
 }
 
 const CONDITION_LABELS = {
@@ -368,7 +368,7 @@ export default function GearRegistryPage({ onBack }) {
                           )}
                           <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                             <button onClick={() => handleEdit(item)} style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', padding: '2px 4px', display: 'flex', alignItems: 'center' }}><IconEdit size={14} /></button>
-                            <button onClick={() => handleDelete(item.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '2px 4px', display: 'flex', alignItems: 'center' }}><IconX size={16} /></button>
+                            <button onClick={() => handleDelete(item.id)} style={{ background: 'none', border: 'none', color: 'var(--status-offline)', cursor: 'pointer', padding: '2px 4px', display: 'flex', alignItems: 'center' }}><IconX size={16} /></button>
                           </div>
                         </div>
                       ))}

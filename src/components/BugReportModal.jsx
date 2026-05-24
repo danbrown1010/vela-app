@@ -4,9 +4,9 @@ import { v4 as uuidv4 } from 'uuid'
 import { supabase } from '../lib/supabase'
 
 const SEVERITY = [
-  { value: 'low',    label: 'Low',    color: '#22c55e' },
-  { value: 'medium', label: 'Medium', color: '#f59e0b' },
-  { value: 'high',   label: 'High',   color: '#ef4444' },
+  { value: 'low',    label: 'Low',    color: 'var(--status-connected)' },
+  { value: 'medium', label: 'Medium', color: 'var(--status-warning)' },
+  { value: 'high',   label: 'High',   color: 'var(--status-offline)' },
 ]
 
 export default function BugReportModal({ meta, user, onClose }) {
@@ -347,7 +347,7 @@ export default function BugReportModal({ meta, user, onClose }) {
             </div>
 
             {error && (
-              <div style={{ fontSize: 12, color: '#ef4444', padding: '6px 10px', background: 'rgba(239,68,68,0.1)', borderRadius: 6 }}>
+              <div style={{ fontSize: 12, color: 'var(--status-offline)', padding: '6px 10px', background: 'rgba(239,68,68,0.1)', borderRadius: 6 }}>
                 {error}
               </div>
             )}

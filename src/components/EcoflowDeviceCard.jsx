@@ -42,9 +42,9 @@ export function EcoflowDeviceCard({ device, onShowInfo, onStatus }) {
   // Battery strip color — SOC-tiered to preserve low-battery warning
   const batteryColor = (error || loading || soc == null || !hasBattery)
     ? flowColor
-    : soc < 20 ? '#ef4444'
-    : soc < 50 ? '#f59e0b'
-    : '#22c55e'
+    : soc < 20 ? 'var(--status-offline)'
+    : soc < 50 ? 'var(--status-warning)'
+    : 'var(--status-connected)'
 
   const statusLabel = loading
     ? 'Loading…'

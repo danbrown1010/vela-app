@@ -258,8 +258,8 @@ export default function HomeAssistantCard() {
 
               const battColor = soc == null ? 'var(--text-tertiary)'
                 : soc > 50 ? 'var(--text-secondary)'
-                : soc > 20 ? '#f59e0b'
-                : '#ef4444'
+                : soc > 20 ? 'var(--status-warning)'
+                : 'var(--status-offline)'
 
               return (
                 <div key={zone.label} style={{
@@ -346,7 +346,7 @@ export default function HomeAssistantCard() {
                   }}>
                     <div style={{
                       width: 8, height: 8, borderRadius: '50%',
-                      background: onCount > 0 ? '#f59e0b' : 'var(--text-tertiary)',
+                      background: onCount > 0 ? 'var(--status-warning)' : 'var(--text-tertiary)',
                       flexShrink: 0,
                     }} />
                     <div style={{
@@ -424,7 +424,7 @@ export default function HomeAssistantCard() {
                 }}>
                   <div style={{
                     width: 8, height: 8, borderRadius: '50%',
-                    background: playingCount > 0 ? '#22c55e' : 'var(--text-tertiary)',
+                    background: playingCount > 0 ? 'var(--status-connected)' : 'var(--text-tertiary)',
                     flexShrink: 0,
                   }} />
                   <div style={{
@@ -636,7 +636,7 @@ function SysStatsModal({ ha, onClose }) {
                 <div style={{ height: 5, borderRadius: 3, background: 'var(--bg-secondary)', overflow: 'hidden' }}>
                   <div style={{
                     height: '100%', width: `${s.bar}%`,
-                    background: s.bar > 85 ? '#ef4444' : s.bar > 65 ? '#f59e0b' : '#22c55e',
+                    background: s.bar > 85 ? 'var(--status-offline)' : s.bar > 65 ? 'var(--status-warning)' : 'var(--status-connected)',
                     transition: 'width 0.4s',
                   }} />
                 </div>

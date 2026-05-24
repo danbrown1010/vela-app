@@ -131,7 +131,7 @@ export function CrewWatchModal({ trip, onClose }) {
               {position.ecoflow_soc != null && (
                 <div style={{ marginTop: 6, paddingTop: 6, borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                   <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>EcoFlow</span>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: position.ecoflow_soc > 50 ? 'var(--safe)' : position.ecoflow_soc > 20 ? '#f59e0b' : '#ef4444' }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: position.ecoflow_soc > 50 ? 'var(--safe)' : position.ecoflow_soc > 20 ? 'var(--status-warning)' : 'var(--status-offline)' }}>
                     {position.ecoflow_soc}%
                   </span>
                   {position.ecoflow_charging != null && (
