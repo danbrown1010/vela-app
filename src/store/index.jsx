@@ -86,6 +86,17 @@ export function AppProvider({ children, user = null, profile = null, signOut = (
   useEffect(() => { if (profile !== undefined) setProfile(profile) }, [profile])
   const isPro = profileState?.plan === 'pro'
 
+  const [flags, setFlags] = useState({})
+  useEffect(() => {
+    if (!user) return
+    supabase
+      .from('feature_flags')
+      .select('id, enabled')
+      .then(({ data }) => {
+        if (data) setFlags(Object.fromEntries(data.map(r => [r.id, r.enabled])))
+      })
+  }, [user?.id])
+
   const [trips, setTrips]         = useState(MOCK_TRIPS)
   const [activeTrip, setActiveTrip] = useState(null)
   const [syncStatus, setSyncStatus] = useState('idle')
@@ -302,7 +313,7 @@ export function AppProvider({ children, user = null, profile = null, signOut = (
 
   return (
     <AppContext.Provider value={{
-      user, profile: profileState, isPro, setProfile, signOut, signInWithGoogle,
+      user, profile: profileState, isPro, setProfile, signOut, signInWithGoogle, flags,
       syncStatus, setSyncStatus,
       trips, activeTrip, setActiveTrip, createTrip, updateTrip, deleteTrip, setActiveTripById, deactivateTrip, publishTrip, unpublishTrip,
       accent, setAccent, theme, setTheme,

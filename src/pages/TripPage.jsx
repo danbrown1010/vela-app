@@ -33,7 +33,7 @@ const LAYER_CONFIG = [
 ]
 
 export default function TripPage() {
-  const { accent, location, activeTrip, trips, user } = useAppStore()
+  const { accent, location, activeTrip, trips, user, flags } = useAppStore()
   const { fires } = useFireData()
   const { tracks, importTrack, removeTrack } = useTracks(user?.id, activeTrip?.id ?? null)
   const mapRef = useRef(null)
@@ -130,21 +130,23 @@ export default function TripPage() {
       <ZoomControls mapRef={mapRef} />
       <RecenterBtn onPress={recenter} accent={accent} />
 
-      {/* Import track button */}
-      <button
-        onClick={() => setShowImport(true)}
-        aria-label="Import track"
-        style={{
-          position: 'absolute', right: 16, top: 92,
-          width: 40, height: 40, borderRadius: 12,
-          background: 'var(--bg-card)', border: '1px solid var(--border)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: 'var(--text-secondary)', cursor: 'pointer',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-        }}
-      >
-        <IconUpload style={{ width: 18, height: 18 }} />
-      </button>
+      {/* Import track button — gated by feature_flags.track_sharing */}
+      {flags.track_sharing !== false && (
+        <button
+          onClick={() => setShowImport(true)}
+          aria-label="Import track"
+          style={{
+            position: 'absolute', right: 16, top: 92,
+            width: 40, height: 40, borderRadius: 12,
+            background: 'var(--bg-card)', border: '1px solid var(--border)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'var(--text-secondary)', cursor: 'pointer',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+          }}
+        >
+          <IconUpload style={{ width: 18, height: 18 }} />
+        </button>
+      )}
 
       <BottomSheet
         expanded={expanded}
@@ -161,15 +163,16 @@ export default function TripPage() {
         onDeleteTrack={removeTrack}
       />
 
-      {/* Import track sheet */}
-      <ImportTrackSheet
-        open={showImport}
-        onClose={() => setShowImport(false)}
-        onImport={importTrack}
-        trips={trips}
-        defaultTripId={activeTrip?.id ?? null}
-        accent={accent}
-      />
+      {flags.track_sharing !== false && (
+        <ImportTrackSheet
+          open={showImport}
+          onClose={() => setShowImport(false)}
+          onImport={importTrack}
+          trips={trips}
+          defaultTripId={activeTrip?.id ?? null}
+          accent={accent}
+        />
+      )}
 
       {/* Doc preview modal */}
       {previewDoc && (
