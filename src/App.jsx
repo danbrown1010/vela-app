@@ -74,7 +74,10 @@ export default function App() {
 
 function AppShell({ user }) {
   const { setSyncStatus, setProfile } = useAppStore()
-  useSyncOnLogin(user, setSyncStatus)
+  const [toast, setToast] = useState(null)
+  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3500) }
+
+  useSyncOnLogin(user, setSyncStatus, showToast)
   usePositionBroadcast()
   const { migrationToken } = useHaToken()
   const [haSetupOpen, setHaSetupOpen] = useState(false)
@@ -87,9 +90,6 @@ function AppShell({ user }) {
   }, [])
 
   const showHaSetup = (migrationToken !== null && !migrationDismissed) || haSetupOpen
-
-  const [toast, setToast] = useState(null)
-  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3500) }
 
   // Handle Stripe redirect returns
   useEffect(() => {
@@ -119,28 +119,33 @@ function AppShell({ user }) {
 
   useEffect(() => {
     const handleOnline = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user) return
-      const userId = session.user.id
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session?.user) return
+        const userId = session.user.id
 
-      for (const id of getPendingTripDeletes()) {
-        const { error } = await deleteTripFromSupabase(id)
-        if (!error) removePendingTripDelete(id)
-      }
+        for (const id of getPendingTripDeletes()) {
+          const { error } = await deleteTripFromSupabase(id)
+          if (!error) removePendingTripDelete(id)
+        }
 
-      for (const trip of Object.values(getPendingTripSaves())) {
-        const { error } = await syncTripToSupabase(trip, userId)
-        if (!error) removePendingTripSave(trip.id)
-      }
+        for (const trip of Object.values(getPendingTripSaves())) {
+          const { error } = await syncTripToSupabase(trip, userId)
+          if (!error) removePendingTripSave(trip.id)
+        }
 
-      for (const id of getPendingDeletes()) {
-        const { error } = await deleteGearFromSupabase(id)
-        if (!error) removePendingDelete(id)
-      }
+        for (const id of getPendingDeletes()) {
+          const { error } = await deleteGearFromSupabase(id)
+          if (!error) removePendingDelete(id)
+        }
 
-      for (const item of Object.values(getPendingSaves())) {
-        const { error } = await syncGearToSupabase(item, userId)
-        if (!error) removePendingSave(item.id)
+        for (const item of Object.values(getPendingSaves())) {
+          const { error } = await syncGearToSupabase(item, userId)
+          if (!error) removePendingSave(item.id)
+        }
+      } catch (err) {
+        console.error('Online sync error:', err)
+        showToast('Reconnect sync failed — changes will retry on next login.')
       }
     }
     window.addEventListener('online', handleOnline)

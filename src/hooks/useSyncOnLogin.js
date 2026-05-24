@@ -4,7 +4,7 @@ import { getPendingTripSaves, removePendingTripSave, getPendingTripDeletes, remo
 import { bulkSyncGearToSupabase, deleteGearFromSupabase, syncTripToSupabase, deleteTripFromSupabase, fetchGearFromSupabase } from '../utils/syncManager'
 import { getAnthropicKey } from '../utils/secretsManager'
 
-export function useSyncOnLogin(user, setSyncStatus) {
+export function useSyncOnLogin(user, setSyncStatus, onError) {
   useEffect(() => {
     if (!user) return
 
@@ -73,6 +73,7 @@ export function useSyncOnLogin(user, setSyncStatus) {
       } catch (err) {
         console.error('Sync failed:', err)
         setSyncStatus('error')
+        onError?.('Sync failed — some changes may not have saved. They will retry on next login.')
       }
     }
 
