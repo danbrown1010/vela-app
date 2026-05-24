@@ -166,6 +166,61 @@ https://admin.vela-go.com/**
 
 ---
 
+## Shipped (2026-05-24)
+
+- **HA token Safari ITP fix (`haUrl` → `user_secrets`)** — Safari ITP was evicting
+  `vela-ha-url` from localStorage, breaking HA connections after a few days. Migrated
+  `ha_url` to a new plaintext column on `user_secrets` (not encrypted — it's a URL, not a
+  secret). `haTokenStore.jsx` extended to load/save `haUrl` and exposes `setHaUrl`;
+  `useCommunications` and `useHomeAssistant` now read `haUrl` from the store rather than
+  localStorage. One-time migration copies any existing `vela-ha-url` localStorage value to
+  DB on first boot. Also fixed a `useCommunications` passphrase-mode unlock bug — it now
+  calls `requestUnlock` like `useHomeAssistant` does.
+
+- **`rigStatus` cold-load flash fix** — `RigStatusProvider` was defaulting pill state to
+  `'unconfigured'`, producing a misleading flash before the first probe completed. Default
+  changed to `'loading'`; `StatusPill` renders `'loading'` as a muted/desaturated dot.
+  `RigStatusProvider` hoisted from `RigPage` to `AppShell` so boot-time probes from
+  `HaProbeRunner` can write status before the Rig tab is ever visited.
+
+- **Sync queue resilience** — `syncManager.js` delete wrappers now UUID-validate the ID
+  before hitting Supabase and treat `PGRST116` (row not found) as success. Real errors still
+  propagate. `cleanupPhantomDeletes` in `useSyncOnLogin.js` sweeps all three pending-delete
+  queues AND `vela-pending-trip-saves` for non-UUID (mock) IDs on every login — stuck
+  entries self-heal without user action.
+
+- **Mock trip seed removal** — `MOCK_TRIPS` constant deleted from `store/index.jsx`;
+  initial state is now `useState([])`. `cleanupPhantomDeletes` also covers
+  `vela-pending-trip-saves`. A sunset `TODO(cleanup)` comment marks the sweep for removal
+  after Dec 2026.
+
+- **Background HA probing — Approach B (`HaProbeRunner`)** — `src/utils/networkType.js`
+  added (`isOnWifi()`, `onNetworkChange()`). `useHomeAssistant` and `useCommunications`
+  probe on boot and poll every 30 s on Wi-Fi while visible; pause on cellular or when
+  backgrounded; re-probe on foreground/network-change. Safari iOS lacks
+  `navigator.connection` — falls back to assume Wi-Fi. `src/components/HaProbeRunner.jsx`
+  is a zero-UI component mounted at `AppShell` root; it runs both hooks in parallel with the
+  Rig tab's own instances (acceptable double-fetch on LAN) and writes results to
+  `RigStatusContext` so the status pills stay fresh without the Rig tab being open.
+
+- **Pets icon consistency** — bottom nav Pets icon replaced with `IconPaw` (lucide
+  `PawPrint`) to match the More page Pets icon.
+
+- **iOS PWA fullscreen + safe-area** — added `viewport-fit=cover`,
+  `apple-mobile-web-app-capable`, `mobile-web-app-capable`,
+  `apple-mobile-web-app-status-bar-style=black-translucent`, and
+  `apple-mobile-web-app-title` meta tags. `AppShell` no longer applies safe-area padding
+  (was causing a double-inset on every page). `CollapsingHeader` owns
+  `safe-area-inset-top`, merged into the inner row's `paddingTop` via
+  `calc(env(safe-area-inset-top) + Npx)`. `BottomNav` owns `safe-area-inset-bottom` as
+  `paddingBottom: calc(8px + env(...))` so the background extends fully into the home
+  indicator zone. `BugReportButton` and `PendingSyncIndicator` repositioned above the nav.
+  Full-screen pages without `CollapsingHeader` (Create/Edit Trip, Pets sub-views) apply
+  `max(12px, env(safe-area-inset-top))` on their top header. Theme-aware status bar style:
+  `parchment` theme → `default` (dark icons); all other themes → `black-translucent`.
+
+---
+
 ## Shipped (current session)
 
 - **Rig page three-state status pills** — Power / Comms / Environment chips with shared
@@ -286,6 +341,7 @@ If a future session's context mentions any of these, they are **wrong**:
 | "AuthGate renders SignInPage inline on no-session" | It Navigates to `/login`; inline sign-in only at `/login` |
 | "localStorage for HA token" | Encrypted `user_secrets` (Phase 2h). Migration path removed. |
 | "bulkSyncGearToSupabase is the sync path" | Per-item sync in `useSyncOnLogin` (Phase 2c.5.1). Bulk function is dead. |
+| "`vela-ha-url` localStorage for HA URL" | `user_secrets.ha_url` (plaintext column). Safari ITP evicts localStorage; URL now persisted to DB and read via `useHaToken()`. |
 
 ---
 
@@ -315,3 +371,33 @@ while (cursor) {
 
 **`HaTokenSetupModal` no longer handles migration.** The `prefilledToken` /
 `isMigration` path was removed in Phase 2h. The modal is first-time setup only.
+
+**Safe-area-inset must be applied EXACTLY ONCE per edge in the layout chain.**
+Current ownership:
+- Top: `CollapsingHeader` — merged into the inner row's `paddingTop` as
+  `calc(env(safe-area-inset-top) + Npx)`. No outer wrapper applies it.
+- Bottom: `BottomNav` — `paddingBottom: calc(8px + env(safe-area-inset-bottom))`,
+  background-color fills the inset area so the nav bar extends visually to the screen edge.
+- `AppShell` owns **none** — it is a transparent layout shell; adding safe-area here
+  creates a double-inset on every page.
+- Full-screen pages without `CollapsingHeader` (Create/Edit Trip, all Pets sub-views):
+  apply `max(12px, env(safe-area-inset-top))` to their top header element only.
+- Floating fixed elements (`BugReportButton`, `PendingSyncIndicator`): bottom offset
+  must include both the approximate nav height and `env(safe-area-inset-bottom)` —
+  e.g. `calc(76px + env(safe-area-inset-bottom))`.
+
+**iOS PWA re-install is required** after any change to `viewport` or
+`apple-mobile-web-app-*` meta tags. The Workbox service worker caches `index.html`; the
+only reliable way to pick up new tags is to remove the old home-screen icon and re-add
+from Safari.
+
+**Sync queue self-heal — `cleanupPhantomDeletes` in `useSyncOnLogin.js`** runs on every
+login and sweeps `vela-pending-deletes`, `vela-pending-trip-deletes`, and
+`vela-pending-trip-saves` for any non-UUID IDs (mock or legacy). Matching entries are
+silently removed. A sunset TODO in the file marks it for removal after Dec 2026. Do not
+remove it before then.
+
+**`haUrl` lives in `user_secrets.ha_url`** — plaintext, not encrypted (it's a URL, not a
+secret). The encrypted token is in `user_secrets.ha_token_encrypted`. Both are accessed
+via `useHaToken()`. Do not read `vela-ha-url` from localStorage — Safari ITP will evict
+it within days on a low-traffic device.
