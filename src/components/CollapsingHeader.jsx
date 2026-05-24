@@ -119,13 +119,14 @@ export function CollapsingHeader({
         backdropFilter: 'blur(16px) saturate(140%)',
         WebkitBackdropFilter: 'blur(16px) saturate(140%)',
         borderBottom: '1px solid var(--header-border)',
-        paddingTop: 'env(safe-area-inset-top)',
       }}
     >
-      {/* Top row */}
+      {/* Top row — paddingTop absorbs both safe-area-inset-top and the visual breathing room */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 12,
-        padding: `${headerPaddingY}px 16px ${lerp(8, 6, scrollProgress)}px`,
+        paddingTop: `calc(env(safe-area-inset-top) + ${headerPaddingY}px)`,
+        paddingRight: '16px',
+        paddingBottom: `${lerp(8, 6, scrollProgress)}px`,
       }}>
 
         {/* Image slot — node OR src */}

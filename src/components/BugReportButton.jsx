@@ -39,6 +39,7 @@ export default function BugReportButton() {
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 150,
+          bottom: 'calc(76px + env(safe-area-inset-bottom))',
           boxShadow: '0 4px 14px rgba(249,115,22,0.5)',
           transition: 'background 0.15s, transform 0.1s, opacity 0.15s',
           color: '#fff',

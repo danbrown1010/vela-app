@@ -79,7 +79,7 @@ export default function BottomNav({ active, onChange }) {
       display: 'flex', background: 'var(--bg-secondary)',
       borderTop: '1px solid var(--border)',
       flexShrink: 0,
-      paddingBottom: 'env(safe-area-inset-bottom)',
+      paddingBottom: 'calc(8px + env(safe-area-inset-bottom))',
     }}>
       {tabs.map(({ id, label }) => {
         const isActive = active === id
