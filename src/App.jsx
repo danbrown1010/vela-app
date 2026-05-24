@@ -78,13 +78,20 @@ export default function App() {
 }
 
 function AppShell({ user }) {
-  const { setSyncStatus, setProfile } = useAppStore()
+  const { setSyncStatus, setProfile, theme } = useAppStore()
   const [toast, setToast] = useState(null)
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3500) }
   const [showSyncPanel, setShowSyncPanel] = useState(false)
 
   useSyncOnLogin(user, setSyncStatus, showToast)
   usePositionBroadcast()
+
+  useEffect(() => {
+    const meta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]')
+    if (!meta) return
+    meta.setAttribute('content', theme === 'parchment' ? 'default' : 'black-translucent')
+  }, [theme])
+
   const [haSetupOpen, setHaSetupOpen] = useState(false)
 
   useEffect(() => {
