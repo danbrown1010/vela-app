@@ -145,7 +145,6 @@ export default function SurvivalAgentPage({ onBack }) {
       .then(({ data, error }) => {
         if (error) console.warn('[SurvivalAgent] Doc context load failed:', error)
         const docs = data ?? []
-        console.log('[SurvivalAgent] Doc context loaded:', docs.length, docs)
         docContextRef.current = docs
         setDocContext(docs)
         setDocsLoaded(true)
@@ -200,7 +199,6 @@ Current situational context:`,
     else
       parts.push('Equipment: No gear registry configured yet.')
     const docCtx = buildDocContext(docContextRef.current, tripDocs)
-    console.log('[SurvivalAgent] System prompt doc section:', docCtx)
     if (docCtx) parts.push(docCtx)
     parts.push(`Expertise areas:
 - Vehicle recovery (winching, traction boards, high-lift jack, kinetic rope)

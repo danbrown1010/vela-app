@@ -451,7 +451,6 @@ function AddDocView({ onBack, onSave, user }) {
         } else if (file.type.startsWith('image/')) {
           try {
             extractedText = await analyzeImage(file)
-            console.log('[GloveBox] Vision response:', extractedText)
           } catch (e) {
             console.warn('Image analysis failed:', e)
           }

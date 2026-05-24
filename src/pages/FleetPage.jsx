@@ -202,7 +202,6 @@ function VehicleSetupChat({ onComplete, onCancel }) {
       body: JSON.stringify({ model: 'claude-sonnet-4-5', max_tokens: maxTokens, system: VEHICLE_SYSTEM_PROMPT, messages: msgs }),
     })
     const data = await res.json()
-    console.log('[Fleet] Claude response:', JSON.stringify(data).slice(0, 300))
     if (data.error) throw new Error(data.error.message || `API error: ${data.error.type}`)
     const text = data.content?.[0]?.text
     if (!text) throw new Error('Empty response — check API key in Settings')
@@ -237,7 +236,6 @@ function VehicleSetupChat({ onComplete, onCancel }) {
       if (profileMatch) {
         try {
           const jsonStr = profileMatch[1].trim()
-          console.log('[Fleet] Profile JSON:', jsonStr.slice(0, 200))
           const parsed = JSON.parse(jsonStr)
           setVehicleData(parsed)
           setSetupDone(true)
@@ -768,10 +766,8 @@ export default function FleetPage({ onBack }) {
   const [selectedVehicle, setSelectedVehicle] = useState(null)
 
   const handleSetupComplete = async (data) => {
-    console.log('[Fleet] Saving vehicle:', data)
     try {
-      const saved = await addVehicle(data)
-      console.log('[Fleet] Vehicle saved:', saved)
+      await addVehicle(data)
       setView('roster')
     } catch (err) {
       console.error('[Fleet] Add vehicle error:', err)
