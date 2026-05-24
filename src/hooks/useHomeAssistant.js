@@ -1,19 +1,16 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useHaToken } from '../store/haTokenStore'
 
-const HA_URL =
-  localStorage.getItem('vela-ha-url') ||
-  import.meta.env.VITE_HA_URL ||
-  'http://192.168.68.112:8123'
-
 export function useHomeAssistant() {
   const [connected, setConnected] = useState(false)
   const [connecting, setConnecting] = useState(true)
   const [entities, setEntities] = useState({})
   const [lastUpdated, setLastUpdated] = useState(null)
   const [lastError, setLastError] = useState(null)
-  const { plaintextToken, status: haStatus, requestUnlock } = useHaToken()
+  const { plaintextToken, haUrl, status: haStatus, requestUnlock } = useHaToken()
   const token = plaintextToken ?? ''
+  // Fallback chain: DB-stored URL → env var → hardcoded local IP
+  const HA_URL = haUrl || import.meta.env.VITE_HA_URL || 'http://192.168.68.112:8123'
 
   useEffect(() => {
     if (haStatus === 'locked') requestUnlock()
@@ -197,6 +194,7 @@ export function useHomeAssistant() {
     connecting,
     entities,
     token,
+    haStatus,
     connect,
     callService,
     toggle,

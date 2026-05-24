@@ -36,10 +36,14 @@ export function useCommunications() {
   const [lastUpdated, setLastUpdated] = useState(null)
   const cancelRef = useRef(false)
 
-  const haUrl = localStorage.getItem('vela-ha-url') ?? ''
-  const { plaintextToken } = useHaToken()
+  const { plaintextToken, haUrl, status: haStatus, requestUnlock } = useHaToken()
   const haToken = plaintextToken ?? ''
   const isConfigured = !!(haUrl && haToken)
+
+  // Trigger the unlock modal when the token exists but requires a passphrase
+  useEffect(() => {
+    if (haStatus === 'locked') requestUnlock()
+  }, [haStatus, requestUnlock])
 
   const fetchAll = useCallback(async () => {
     if (!isConfigured) {
@@ -91,7 +95,7 @@ export function useCommunications() {
   const speedtestPing = parseFloat(data?.speedtestPing?.state)
 
   return {
-    loading, error, lastUpdated, isConfigured,
+    loading, error, lastUpdated, isConfigured, haStatus,
     wifiOn,
     cpuTempF: Number.isFinite(cpuTempF) ? cpuTempF : null,
     memoryPct: Number.isFinite(memoryPct) ? memoryPct : null,

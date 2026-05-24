@@ -59,7 +59,7 @@ export default function SettingsPage({ onBack, onNavigateTab, onClose, embedded 
   const [starlinkSheet, setStarlinkSheet] = useState(false)
   const [haSheet, setHaSheet]             = useState(false)
   const [ecoflowSheet, setEcoflowSheet]   = useState(false)
-  const [haUrl, setHaUrl]           = useState(() => localStorage.getItem('vela-ha-url') ?? '')
+  const [haUrl, setHaUrl]           = useState('')
   const [haSheetView, setHaSheetView] = useState('main') // 'main' | 'repair' | 'to-passphrase' | 'to-auto'
   const [haNewPassphrase, setHaNewPassphrase] = useState('')
   const [haNewConfirmPass, setHaNewConfirmPass] = useState('')
@@ -67,6 +67,11 @@ export default function SettingsPage({ onBack, onNavigateTab, onClose, embedded 
   const [haSheetSaving, setHaSheetSaving] = useState(false)
   const haToken = useHaToken()
   const pendingSyncCount = usePendingSyncCount()
+
+  // Keep local URL input in sync with the value stored in the DB
+  useEffect(() => {
+    if (haToken.haUrl) setHaUrl(haToken.haUrl)
+  }, [haToken.haUrl])
 
   const [tripToggles, setTripToggles] = useState({
     phaseAware:        true,
@@ -610,7 +615,7 @@ export default function SettingsPage({ onBack, onNavigateTab, onClose, embedded 
                     <button onClick={closeHaSheet} style={haSheetSecondaryBtn}>Cancel</button>
                     <button
                       onClick={() => {
-                        if (haUrl) localStorage.setItem('vela-ha-url', haUrl)
+                        if (haUrl) haToken.setHaUrl(haUrl).catch(console.error)
                         closeHaSheet()
                         window.dispatchEvent(new CustomEvent('vela:ha-setup-needed'))
                       }}
@@ -626,8 +631,8 @@ export default function SettingsPage({ onBack, onNavigateTab, onClose, embedded 
               // ── Configured: mode info + switch + re-pair ──
               <>
                 <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-body)', marginBottom: 4 }}>Home Assistant</div>
-                {haUrl && (
-                  <div style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)', marginBottom: 16 }}>{haUrl}</div>
+                {haToken.haUrl && (
+                  <div style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)', marginBottom: 16 }}>{haToken.haUrl}</div>
                 )}
                 <div style={{ padding: '12px 14px', borderRadius: 10, background: 'var(--bg-secondary)', border: '1px solid var(--border)', marginBottom: 12 }}>
                   <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-tertiary)', marginBottom: 4 }}>Token security</div>

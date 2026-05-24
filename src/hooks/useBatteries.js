@@ -32,8 +32,7 @@ export function useBatteries() {
   const [lastUpdated, setLastUpdated] = useState(null)
   const cancelRef = useRef(false)
 
-  const haUrl = localStorage.getItem('vela-ha-url') ?? ''
-  const { plaintextToken } = useHaToken()
+  const { plaintextToken, haUrl } = useHaToken()
   const haToken = plaintextToken ?? ''
   const isConfigured = !!(haUrl && haToken)
 
