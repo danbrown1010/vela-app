@@ -91,6 +91,7 @@
   --status-connected:    #22c55e;
   --status-offline:      #ef4444;
   --status-unconfigured: var(--text-tertiary);
+  --status-loading:      #94a3b8;
   --status-warning:      #eab308;
 }
 

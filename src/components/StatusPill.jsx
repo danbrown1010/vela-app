@@ -2,7 +2,15 @@ export function StatusPill({ status, label, isActive, onClick, accent }) {
   const dotColor =
     status === 'connected' ? 'var(--status-connected)'
     : status === 'offline' ? 'var(--status-offline)'
+    : status === 'loading' ? 'var(--status-loading)'
     : 'var(--status-unconfigured)'
+
+  const dotStyle = {
+    width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
+    transition: 'background 0.2s',
+    background: dotColor,
+    ...(status === 'loading' && { animation: 'pulse 1.5s ease-in-out infinite' }),
+  }
 
   return (
     <button
@@ -18,11 +26,7 @@ export function StatusPill({ status, label, isActive, onClick, accent }) {
         transition: 'background 0.15s, border-color 0.15s, color 0.15s',
       }}
     >
-      <div style={{
-        width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
-        transition: 'background 0.2s',
-        background: dotColor,
-      }} />
+      <div style={dotStyle} />
       {label}
     </button>
   )

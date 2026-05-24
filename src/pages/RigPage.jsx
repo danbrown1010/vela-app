@@ -303,7 +303,9 @@ function EcoflowSection({ onShowInfo }) {
     setDeviceStatuses(prev => prev[sn] === status ? prev : { ...prev, [sn]: status })
   }, [])
 
-  const powerStatus = !loaded || visibleDevices.length === 0
+  const powerStatus = !loaded
+    ? 'loading'
+    : visibleDevices.length === 0
     ? 'unconfigured'
     : Object.values(deviceStatuses).some(s => s === 'connected')
     ? 'connected'

@@ -14,7 +14,8 @@ export default function HomeAssistantCard() {
   const configured = !!ha.token && !!ha.HA_URL
   const age = ha.lastUpdated ? Date.now() - ha.lastUpdated.getTime() : Infinity
   const envStatus =
-    !configured ? 'unconfigured'
+    ha.haStatus === 'loading' ? 'loading'
+    : !configured ? 'unconfigured'
     : (ha.lastError || !ha.connected) ? 'offline'
     : ha.lastUpdated && age < HA_FRESHNESS_MS ? 'connected'
     : 'offline'

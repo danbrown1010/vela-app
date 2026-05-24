@@ -34,7 +34,7 @@ function severityFor(value, { warning, critical }) {
 export function CommunicationsSection() {
   const { accent } = useAppStore()
   const {
-    loading, error, lastUpdated, isConfigured,
+    loading, error, lastUpdated, isConfigured, haStatus,
     wifiOn, cpuTempF, memoryPct, flashPct, uptimeIso,
     speedtestDown, speedtestUp, speedtestPing,
     refetch,
@@ -43,7 +43,8 @@ export function CommunicationsSection() {
 
   const age = lastUpdated ? Date.now() - lastUpdated.getTime() : Infinity
   const commsStatus =
-    !isConfigured ? 'unconfigured'
+    haStatus === 'loading' ? 'loading'
+    : !isConfigured ? 'unconfigured'
     : error && error !== 'Home Assistant not configured' ? 'offline'
     : !error && age < COMMS_FRESHNESS_MS ? 'connected'
     : 'offline'

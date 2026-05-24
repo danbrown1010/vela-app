@@ -4,9 +4,9 @@ const RigStatusContext = createContext(null)
 
 export function RigStatusProvider({ children }) {
   const [status, setStatus] = useState({
-    power: 'unconfigured',
-    comms: 'unconfigured',
-    env:   'unconfigured',
+    power: 'loading',
+    comms: 'loading',
+    env:   'loading',
   })
 
   const setSection = useCallback((section, val) => {
