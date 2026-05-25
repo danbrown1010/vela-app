@@ -220,9 +220,9 @@ export default function HomeAssistantCard() {
               {
                 label: 'Ursa Minor',
                 tempId:  'sensor.ursa_minor_2_temperature',
-                humId:   'sensor.ursa_minor_humidity',
+                humId:   'sensor.ursa_minor_2_humidity',
                 powerId: 'binary_sensor.ursa_minor_power',
-                battId:  'sensor.ursa_minor_battery',
+                battId:  'sensor.ursa_minor_2_battery',
               },
               {
                 label: 'Cabin',
@@ -241,9 +241,9 @@ export default function HomeAssistantCard() {
               {
                 label: 'Refrigerator',
                 tempId:  'sensor.iceco_fridge_temperature',
-                humId:   'sensor.refrigerator_humidity',
+                humId:   'sensor.iceco_fridge_humidity',
                 powerId: 'binary_sensor.refrigerator_power',
-                battId:  'sensor.refrigerator_battery',
+                battId:  'sensor.iceco_fridge_battery',
               },
             ].map(zone => {
               const temp    = ha.getState(zone.tempId)
@@ -683,6 +683,10 @@ function IconBattery({ level = 0, size = 14, style: extraStyle = {} }) {
 function isSensorOffline(ha, zone) {
   const powerState = ha.getState(zone.powerId)
   const powerOff = powerState === 'off'
-  const battUnavailable = !Number.isFinite(parseFloat(ha.getState(zone.battId)))
-  return powerOff || battUnavailable
+  const rawBatt = ha.getState(zone.battId)
+  const battDepleted = rawBatt != null
+    && rawBatt !== 'unavailable'
+    && rawBatt !== 'unknown'
+    && parseFloat(rawBatt) === 0
+  return powerOff || battDepleted
 }

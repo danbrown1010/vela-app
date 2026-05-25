@@ -25,13 +25,13 @@ export function useHomeAssistant() {
   const loadEntities = useCallback(async () => {
     const entityIds = [
       'sensor.ursa_minor_2_temperature',
-      'sensor.ursa_minor_humidity',
+      'sensor.ursa_minor_2_humidity',
       'sensor.cabin_temperature',
       'sensor.cabin_humidity',
       'sensor.outside_temperature',
       'sensor.outside_humidity',
       'sensor.iceco_fridge_temperature',
-      'sensor.refrigerator_humidity',
+      'sensor.iceco_fridge_humidity',
       'sensor.chomp_weather_station_inside_temperature',
       'sensor.chomp_weather_station_inside_humidity',
       'sensor.chomp_weather_station_outside_temperature',
@@ -59,8 +59,8 @@ export function useHomeAssistant() {
       'switch.chomp_battery_beeper',
       'sensor.cabin_battery',
       'sensor.outside_battery',
-      'sensor.ursa_minor_battery',
-      'sensor.refrigerator_battery',
+      'sensor.ursa_minor_2_battery',
+      'sensor.iceco_fridge_battery',
       'binary_sensor.cabin_power',
       'binary_sensor.outside_power',
       'binary_sensor.ursa_minor_power',
@@ -87,7 +87,11 @@ export function useHomeAssistant() {
       const filtered = {}
       allStates
         .filter(e => entityIds.includes(e.entity_id))
-        .forEach(e => { filtered[e.entity_id] = e })
+        .forEach(e => {
+          if (import.meta.env.DEV) { console.log('[HA]', e.entity_id, e) }
+          filtered[e.entity_id] = e
+        })
+      if (import.meta.env.DEV) { entityIds.forEach(id => { if (!filtered[id]) console.warn('[HA] MISSING', id) }) }
 
       setEntities(filtered)
       setLastUpdated(new Date())

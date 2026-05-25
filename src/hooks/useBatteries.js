@@ -6,8 +6,8 @@ const POLL_MS = 30000
 const BATTERIES = [
   { id: 'outside',      entityId: 'sensor.outside_battery',      label: 'Outside'      },
   { id: 'cabin',        entityId: 'sensor.cabin_battery',         label: 'Cabin'        },
-  { id: 'ursa_minor',   entityId: 'sensor.ursa_minor_battery',    label: 'Ursa Minor'   },
-  { id: 'refrigerator', entityId: 'sensor.refrigerator_battery',  label: 'Refrigerator' },
+  { id: 'ursa_minor',   entityId: 'sensor.ursa_minor_2_battery',   label: 'Ursa Minor'   },
+  { id: 'refrigerator', entityId: 'sensor.iceco_fridge_battery',   label: 'Refrigerator' },
 ]
 
 async function fetchState(haUrl, token, entityId) {

@@ -251,6 +251,8 @@ https://admin.vela-go.com/**
   - 2h: localStorage HA token migration path removed (`migrationToken`, `migrationDismissed`,
     `isMigration` branch)
 - **HANDOFF.md** — created and committed.
+- **`isSensorOffline` battery guard fix** — `isSensorOffline` no longer treats missing/unavailable battery entities as offline — temperature renders when battery sensor is absent or not yet reporting.
+- **Migrated HA entity IDs** — `ursa_minor_*` → `ursa_minor_2_*`, `refridgerator_*` → `iceco_fridge_*` across `useHomeAssistant.js`, `HomeAssistantCard.jsx`, and `useBatteries.js`.
 
 ---
 
