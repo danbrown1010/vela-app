@@ -219,7 +219,7 @@ export default function HomeAssistantCard() {
             {[
               {
                 label: 'Ursa Minor',
-                tempId:  'sensor.ursa_minor_temperature',
+                tempId:  'sensor.ursa_minor_2_temperature',
                 humId:   'sensor.ursa_minor_humidity',
                 powerId: 'binary_sensor.ursa_minor_power',
                 battId:  'sensor.ursa_minor_battery',
@@ -240,7 +240,7 @@ export default function HomeAssistantCard() {
               },
               {
                 label: 'Refrigerator',
-                tempId:  'sensor.refrigerator_temperature',
+                tempId:  'sensor.iceco_fridge_temperature',
                 humId:   'sensor.refrigerator_humidity',
                 powerId: 'binary_sensor.refrigerator_power',
                 battId:  'sensor.refrigerator_battery',

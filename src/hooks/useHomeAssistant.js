@@ -24,13 +24,13 @@ export function useHomeAssistant() {
 
   const loadEntities = useCallback(async () => {
     const entityIds = [
-      'sensor.ursa_minor_temperature',
+      'sensor.ursa_minor_2_temperature',
       'sensor.ursa_minor_humidity',
       'sensor.cabin_temperature',
       'sensor.cabin_humidity',
       'sensor.outside_temperature',
       'sensor.outside_humidity',
-      'sensor.refrigerator_temperature',
+      'sensor.iceco_fridge_temperature',
       'sensor.refrigerator_humidity',
       'sensor.chomp_weather_station_inside_temperature',
       'sensor.chomp_weather_station_inside_humidity',
