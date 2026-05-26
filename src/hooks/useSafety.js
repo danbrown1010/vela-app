@@ -4,8 +4,9 @@ const NIFC_POLL_MS     =  60 * 60 * 1000   // 60 min
 const AQI_POLL_MS      =  30 * 60 * 1000   // 30 min
 const BURN_BAN_POLL_MS =   6 * 60 * 60 * 1000  // 6 hours
 
-// ~100 miles in degrees (mid-latitude approximation)
-const BBOX_DEG = 1.45
+const NIFC_BASE =
+  'https://services3.arcgis.com/T4QMspbfLg3qoC1P/arcgis/rest/services/' +
+  'WFIGS_Interagency_Perimeters_Current/FeatureServer/0'
 
 // WA state bounding box for burn ban gate
 const WA_BOUNDS = { minLat: 45.5, maxLat: 49.1, minLng: -124.8, maxLng: -116.9 }
@@ -18,19 +19,23 @@ function inWashington(lat, lng) {
 }
 
 function nifcBboxUrl(lat, lng) {
-  const bbox = `${lng - BBOX_DEG},${lat - BBOX_DEG},${lng + BBOX_DEG},${lat + BBOX_DEG}`
-  return (
-    'https://services3.arcgis.com/T4QMspbfLg3qoC1P/arcgis/rest/services/' +
-    'WFIGS_Interagency_Perimeters_Current/FeatureServer/0/query' +
-    `?where=1%3D1` +
-    `&geometry=${bbox}` +
-    `&geometryType=esriGeometryEnvelope` +
-    `&inSR=4326` +
-    `&spatialRel=esriSpatialRelIntersects` +
-    `&outFields=IncidentName,GISAcres,CreateDate,PerimeterCategory` +
-    `&outSR=4326` +
-    `&f=geojson`
-  )
+  const pad  = 1.5   // ~100 mi at PNW latitudes
+  const xmin = lng - pad
+  const ymin = lat - pad
+  const xmax = lng + pad
+  const ymax = lat + pad
+  const params = new URLSearchParams({
+    where:        '1=1',
+    geometryType: 'esriGeometryEnvelope',
+    spatialRel:   'esriSpatialRelIntersects',
+    inSR:         '4326',
+    outSR:        '4326',
+    outFields:    '*',
+    f:            'geojson',
+  })
+  // geometry commas must be literal — appended outside URLSearchParams to avoid encoding
+  const url = `${NIFC_BASE}/query?${params.toString()}&geometry=${xmin},${ymin},${xmax},${ymax}`
+  return url
 }
 
 // TODO: verify WA DNR burn restriction endpoint before relying on it
