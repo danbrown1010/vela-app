@@ -1,10 +1,12 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { supabase } from '../lib/supabase'
 import { useTripPhase } from '../hooks/useTripPhase'
 import { useTripDocs } from '../hooks/useTripDocs'
 import { useAppStore } from '../store/index'
 import { useChompTelemetry } from '../hooks/useChompTelemetry'
+import { useDismissedThreats } from '../hooks/useDismissedThreats'
+import { ThreatHeadline } from '../components/ThreatHeadline'
 import { getGearItems } from '../utils/gearStorage'
 import { Skeleton } from '../components/Skeleton'
 import { StatusBadge } from '../components/StatusBadge'
@@ -537,16 +539,45 @@ function EngineCard({ engine }) {
 }
 
 function OnTripHome({ activeTrip, dayOf, daysRemaining, totalDays, onNavigateToDocs }) {
-  const { accent, deactivateTrip, publishTrip, unpublishTrip, ecoflowSoc, ecoflowCharging, user, weather, weatherLoading } = useAppStore()
+  const { accent, deactivateTrip, publishTrip, unpublishTrip, ecoflowSoc, ecoflowCharging, user, weather, weatherLoading, threats } = useAppStore()
   const { isOnline, fuel, engine } = useChompTelemetry()
+  const { dismissedIds, dismiss, clearDismissed } = useDismissedThreats()
   const { docs: tripDocs, getDocUrl } = useTripDocs(activeTrip?.id, user?.id)
   const [watchTrip, setWatchTrip]     = useState(null)
   const [previewDoc, setPreviewDoc]   = useState(null)
   const [previewUrl, setPreviewUrl]   = useState(null)
 
+  const headlineThreat = useMemo(() =>
+    threats
+      .filter(t => t.surface?.includes('home'))
+      .filter(t => !dismissedIds.has(t.id))
+      .sort((a, b) => b.priority - a.priority)[0] ?? null
+  , [threats, dismissedIds])
+
   const closePreview = () => { setPreviewDoc(null); setPreviewUrl(null) }
   return (
     <div className="overflow-y-auto" style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', padding: 16, gap: 16, paddingBottom: 'calc(24px + env(safe-area-inset-bottom))' }}>
+
+      {/* Snoozed alerts restore pill */}
+      {dismissedIds.size > 0 && (
+        <button
+          onClick={clearDismissed}
+          style={{
+            alignSelf: 'flex-start',
+            fontSize: 11, fontFamily: 'var(--font-mono)',
+            color: 'var(--text-tertiary)',
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--border)',
+            borderRadius: 20, padding: '3px 10px',
+            cursor: 'pointer', letterSpacing: '0.04em',
+            marginBottom: -8,
+          }}
+          className="active:opacity-70 transition-opacity"
+        >
+          {dismissedIds.size} alert{dismissedIds.size === 1 ? '' : 's'} hidden · tap to restore
+        </button>
+      )}
+
       <div style={{ paddingTop: 8, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <div>
           <h1 style={{ fontSize: 28, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{activeTrip.name}</h1>
@@ -565,6 +596,15 @@ function OnTripHome({ activeTrip, dayOf, daysRemaining, totalDays, onNavigateToD
           </button>
         </div>
       </div>
+
+      {/* Threat headline — top-priority home-surface threat, tap X to dismiss */}
+      {headlineThreat && (
+        <ThreatHeadline
+          threat={headlineThreat}
+          onDismiss={() => dismiss(headlineThreat.id)}
+        />
+      )}
+
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12, padding: '10px 14px' }}>
         <div style={{ fontSize: 13, color: activeTrip.is_published ? 'var(--safe)' : 'var(--text-tertiary)' }}>
           {activeTrip.is_published ? '● Broadcasting to observers' : '○ Not broadcasting'}
