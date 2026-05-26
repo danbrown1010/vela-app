@@ -1,9 +1,11 @@
-import { useState, useEffect, createContext, useContext, useCallback } from 'react'
+import { useState, useEffect, useMemo, createContext, useContext, useCallback } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import { useGpsSource } from '../hooks/useGpsSource'
 import { useWeather } from '../hooks/useWeather'
 import { useAirQuality } from '../hooks/useAirQuality'
 import { useEcoFlow } from '../hooks/useEcoFlow'
+import { useSafety } from '../hooks/useSafety'
+import { deriveThreats } from '../utils/deriveThreats'
 import { ECOFLOW_DEVICES } from '../config/devices'
 import { supabase } from '../lib/supabase'
 import { syncTripToSupabase, fetchTripsFromSupabase, deleteTripFromSupabase } from '../utils/syncManager'
@@ -221,15 +223,17 @@ export function AppProvider({ children, user = null, profile = null, signOut = (
   }, [])
 
   const gpsResult = useGpsSource()
-  const location = gpsResult.source === null ? null : {
-    lat:      gpsResult.lat,
-    lng:      gpsResult.lng,
-    accuracy: gpsResult.accuracy,   // METERS — unchanged for all consumers
-    altitude: gpsResult.altitude,
-    timestamp: gpsResult.timestamp,
-    heading:  gpsResult.heading,
-    speed:    gpsResult.speed,
-  }
+  const location = useMemo(() =>
+    gpsResult.source === null ? null : {
+      lat:      gpsResult.lat,
+      lng:      gpsResult.lng,
+      accuracy: gpsResult.accuracy,   // METERS — unchanged for all consumers
+      altitude: gpsResult.altitude,
+      timestamp: gpsResult.timestamp,
+      heading:  gpsResult.heading,
+      speed:    gpsResult.speed,
+    }
+  , [gpsResult])
   const gpsStatus =
     gpsResult.source !== null && (gpsResult.accuracy ?? Infinity) < 100
       ? 'locked'
@@ -241,8 +245,13 @@ export function AppProvider({ children, user = null, profile = null, signOut = (
   const { data: ecoflowData } = useEcoFlow(ECOFLOW_DEVICES.delta2Max.sn)
   const ecoflowSoc      = ecoflowData?.soc ?? null
   const ecoflowCharging = ecoflowData != null ? (ecoflowData.totalInputWatts ?? 0) > 0 : null
-  const { weather, forecast: weatherForecast, loading: weatherLoading, error: weatherError } = useWeather(location?.lat, location?.lng, dataBust)
+  const wx = useWeather(location?.lat, location?.lng)
   const { aqi, loading: aqiLoading, error: aqiError } = useAirQuality(location?.lat, location?.lng, dataBust)
+  const safety = useSafety(location?.lat, location?.lng)
+  const threats = useMemo(
+    () => deriveThreats({ weather: wx, safety, position: location, activeTrip }),
+    [wx, safety, location, activeTrip]
+  )
 
   const setAccent = useCallback((color) => {
     setAccentState(color)
@@ -271,8 +280,10 @@ export function AppProvider({ children, user = null, profile = null, signOut = (
       gpsUpdatedAt: gpsResult.updatedAt,
       obdOnline: gpsResult.obdOnline,
       ecoflowSoc, ecoflowCharging,
-      weather, weatherForecast, weatherLoading, weatherError,
+      weather: wx.current, weatherForecast: wx.daily, weatherLoading: wx.loading, weatherError: wx.error,
+      weatherHourly: wx.hourly, weatherAlerts: wx.alerts, weatherUpdatedAt: wx.updatedAt,
       aqi, aqiLoading, aqiError,
+      safety, threats,
       refreshHomeData,
     }}>
       {children}

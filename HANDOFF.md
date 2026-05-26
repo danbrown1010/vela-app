@@ -85,7 +85,7 @@ All user-data tables are RLS-protected with `user_id` FK and policies:
 
 | File | What it does |
 |------|-------------|
-| `src/store/index.jsx` | Global `AppContext` — trips, user, profile, isPro, flags (feature_flags), weather, AQI, EcoFlow SOC, GPS, theme/accent, pending invite count, pets/tripLabels prefs |
+| `src/store/index.jsx` | Global `AppContext` — trips, user, profile, isPro, flags (feature_flags), weather, AQI, EcoFlow SOC, GPS, safety, threats, theme/accent, pending invite count, pets/tripLabels prefs |
 | `src/store/rigStatus.jsx` | Lightweight `RigStatusContext` scoped inside `RigPage`. Tracks `power`, `comms`, `env` status strings (`'connected'`, `'offline'`, `'unconfigured'`) for the three StatusPills. Written by section components via `useSetRigStatus`. |
 | `src/store/haTokenStore.jsx` | `HaTokenProvider` + `useHaToken`. Loads encrypted HA token from `user_secrets`, decrypts in-memory (auto-mode: `user.id` + `APP_SECRET`; passphrase-mode: user-entered). Exposes `plaintextToken`, `status`, `unlock`, `setToken`, `changeMode`, `clear`, `forgetOnDevice`, `requestUnlock`. |
 | `src/lib/supabase.js` | Configured Supabase client. `window.supabase` assigned in dev. |
@@ -97,6 +97,9 @@ All user-data tables are RLS-protected with `user_id` FK and policies:
 | `src/utils/trackParser.js` | GPX/KML/GeoJSON → GeoJSON FeatureCollection. Uses `@tmcw/togeojson` + Turf simplify with degenerate geometry guards and setTimeout yield for large files. |
 | `src/hooks/usePendingSync.js` | `usePendingSyncCount()` — useState + event listener on `vela:sync-changed`. |
 | `src/hooks/useTracks.js` | Track CRUD with IDB-first, Supabase sync, file upload to Storage, simplification. `importTrack` is the main entry point. |
+| `src/hooks/useWeather.js` | **Two exports:** `useWeather(lat, lng)` → `{ current, hourly, daily, alerts, loading, error, updatedAt }` — 15-min NWS forecast poll, adaptive 5/15-min alerts poll. Seeds from 30-min localStorage cache on mount. `useFireWeather(lat, lng)` → `{ alerts, loading }` — one-shot fire-specific NWS alerts; used directly by SafetyPage. |
+| `src/hooks/useSafety.js` | `useSafety(lat, lng)` → `{ fires, burnBans, aqi, loading, error, updatedAt }`. NIFC: 60-min bbox poll (100mi). AirNow: 30-min poll. WA DNR burn bans: 6h poll, WA-bounded (TODO: verify endpoint). `burnBans` returns null when outside WA. |
+| `src/utils/deriveThreats.js` | Pure function. `deriveThreats({ weather, safety, position, activeTrip })` → `threats[]` sorted by priority desc. Shape: `{ id, type, severity, headline, detail, distanceMi, bearing, trajectory, source, priority, actionable, surface[] }`. Surface rule: ≥60 → home+map+safety; ≥30 → map+safety; <30 → safety. Uses `geo.js` haversineKm. |
 | `src/hooks/useCommunications.js` | GL-iNet router state via HA entity polling. Uses `plaintextToken` from `useHaToken`. |
 | `src/hooks/useHomeAssistant.js` | Full HA entity fetch — temp sensors, humidity, lights, scenes, battery sensors, system stats. Authenticated via `plaintextToken`. Triggers `requestUnlock` if token locked. |
 | `src/hooks/useEcoFlow.js` | EcoFlow MQTT telemetry hook. Returns `soc`, `totalInputWatts`, `totalOutputWatts`, `cycles`, `lastUpdated`. |
@@ -254,6 +257,7 @@ https://admin.vela-go.com/**
 - **`isSensorOffline` battery guard fix** — `isSensorOffline` no longer treats missing/unavailable battery entities as offline — temperature renders when battery sensor is absent or not yet reporting.
 - **Migrated HA entity IDs** — `ursa_minor_*` → `ursa_minor_2_*`, `refridgerator_*` → `iceco_fridge_*` across `useHomeAssistant.js`, `HomeAssistantCard.jsx`, and `useBatteries.js`.
 - **OBD GPS source (`useGpsSource`)** — `src/hooks/useGpsSource.js` polls 7 `sensor.chomp_gps_*` entities every 5 s via HA bulk `/api/states`; prefers OBD when online + fresh + <30 ft accuracy, falls back to browser `watchPosition`. `useGeolocation.js` deleted. `AppContext` gains `gpsSource`, `gpsUpdatedAt`, `obdOnline` alongside existing `location`/`gpsStatus`. `ip-based` gpsStatus dropped (no IP fallback in new hook).
+- **Weather + safety data layer** — `useWeather` rewritten: 15-min NWS forecast poll + adaptive 5/15-min alerts. User-Agent fixed to `'vela-go.com (dan@vela-go.com)'`. Returns `{ current, hourly, daily, alerts, ... }`. New `useSafety` hook (NIFC bbox + AirNow + WA DNR burn bans). New `deriveThreats` pure util. `AppContext` now exposes: backwards-compat `weather`/`weatherForecast`/`weatherLoading`/`weatherError` + new `weatherHourly`/`weatherAlerts`/`weatherUpdatedAt`/`safety`/`threats`. `VITE_AIRNOW_API_KEY` in `.env`. AirNow kept in `useAirQuality` (AppContext `aqi`/`aqiLoading`/`aqiError`) AND in `useSafety.aqi` (for `deriveThreats`). `location` wrapped in `useMemo` to stabilize the `threats` dep array.
 
 ---
 
@@ -302,6 +306,11 @@ Explicit decisions — **do not pick up without re-evaluating the tradeoff.**
 | `HA_URL` resolution duplicated | `useGpsSource.js:21` mirrors `useHomeAssistant.js:14` exactly. Extract to a shared `getHaUrl()` util when touching either file next. |
 | `ip-based` dead branches in GPS consumers | `GpsStatus.jsx`, `HomePage`, `MorePage`, `RigPage`, `SafetyPage` still check `gpsStatus === 'ip-based'` — harmless dead code since `useGpsSource` never emits it. Remove in next GPS/UI pass. |
 | `binary_sensor.refrigerator_power` rename check | Verify in HA whether power entity was also renamed alongside humidity/battery; follow-up edit if so. |
+| SafetyPage migration from `useFireData` + `useFireWeather` | SafetyPage still uses `useFireData()` (global NIFC fetch) and `useFireWeather()` directly. Should migrate to consume `safety` and `weatherAlerts` from AppContext. Temporary double NIFC fetch until then. |
+| WA DNR burn ban endpoint verification | `useSafety.js` uses `services.arcgis.com/jsIt88o09Q0r1j8h/.../DNR_Burn_Restrictions/...` — unverified. Fails silently. Verify URL and field names before relying on this data. |
+| Burn ban coverage outside WA | `useSafety` only fetches WA DNR burn bans. Oregon, Idaho, Montana burn bans unhandled. |
+| `deriveThreats` — SafetyPage + map consumers not yet built | `threats` is on AppContext but nothing reads it yet. Consume in SafetyPage, map overlay, homepage alert card. |
+| Pre-trip threat caching | For trip planning, `deriveThreats` should run against waypoints, not just current position. Cache GeoJSON in IDB per waypoint bbox. |
 
 ---
 
