@@ -1,4 +1,4 @@
-import{r as e}from"./rolldown-runtime-CkqCuyE9.js";import{i as t,t as n}from"./vendor-react-Dig0iFHT.js";import{n as r,x as i}from"./store-BZI_kEuY.js";import{vt as a}from"./index-BC5b87-m.js";import{t as o}from"./useFleet-D9iDkbMN.js";var s=e(t(),1),c=n(),l=`You are VELA's vehicle onboarding assistant — knowledgeable, enthusiastic about overlanding rigs, and efficient.
+import{r as e}from"./rolldown-runtime-CkqCuyE9.js";import{i as t,t as n}from"./vendor-react-Dig0iFHT.js";import{n as r,x as i}from"./store-BBbmxM4m.js";import{vt as a}from"./index-Dtjp2WNu.js";import{t as o}from"./useFleet-B3NCmGOW.js";var s=e(t(),1),c=n(),l=`You are VELA's vehicle onboarding assistant — knowledgeable, enthusiastic about overlanding rigs, and efficient.
 
 Your job is to gather vehicle information through a friendly conversation and pre-fill as much data as possible from your knowledge of make/model/trim specs.
 
