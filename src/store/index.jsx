@@ -6,6 +6,7 @@ import { useAirQuality } from '../hooks/useAirQuality'
 import { useEcoFlow } from '../hooks/useEcoFlow'
 import { useSafety } from '../hooks/useSafety'
 import { deriveThreats } from '../utils/deriveThreats'
+import { deriveTripPhase } from '../utils/deriveTripPhase'
 import { ECOFLOW_DEVICES } from '../config/devices'
 import { supabase } from '../lib/supabase'
 import { syncTripToSupabase, fetchTripsFromSupabase, deleteTripFromSupabase } from '../utils/syncManager'
@@ -248,9 +249,13 @@ export function AppProvider({ children, user = null, profile = null, signOut = (
   const wx = useWeather(location?.lat, location?.lng)
   const { aqi, loading: aqiLoading, error: aqiError } = useAirQuality(location?.lat, location?.lng, dataBust)
   const safety = useSafety(location?.lat, location?.lng)
+  const tripPhase = useMemo(
+    () => deriveTripPhase({ activeTrip, trips, location, profile: profileState }),
+    [activeTrip, trips, location, profileState]
+  )
   const threats = useMemo(
-    () => deriveThreats({ weather: wx, safety, position: location, activeTrip }),
-    [wx, safety, location, activeTrip]
+    () => deriveThreats({ weather: wx, safety, position: location, tripPhase }),
+    [wx, safety, location, tripPhase]
   )
 
   const setAccent = useCallback((color) => {
@@ -283,7 +288,7 @@ export function AppProvider({ children, user = null, profile = null, signOut = (
       weather: wx.current, weatherForecast: wx.daily, weatherLoading: wx.loading, weatherError: wx.error,
       weatherHourly: wx.hourly, weatherAlerts: wx.alerts, weatherUpdatedAt: wx.updatedAt,
       aqi, aqiLoading, aqiError,
-      safety, threats,
+      safety, threats, tripPhase,
       refreshHomeData,
     }}>
       {children}

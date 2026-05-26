@@ -85,7 +85,7 @@ All user-data tables are RLS-protected with `user_id` FK and policies:
 
 | File | What it does |
 |------|-------------|
-| `src/store/index.jsx` | Global `AppContext` — trips, user, profile, isPro, flags (feature_flags), weather, AQI, EcoFlow SOC, GPS, safety, threats, theme/accent, pending invite count, pets/tripLabels prefs |
+| `src/store/index.jsx` | Global `AppContext` — trips, user, profile, isPro, flags (feature_flags), weather, AQI, EcoFlow SOC, GPS, safety, threats, tripPhase, theme/accent, pending invite count, pets/tripLabels prefs |
 | `src/store/rigStatus.jsx` | Lightweight `RigStatusContext` scoped inside `RigPage`. Tracks `power`, `comms`, `env` status strings (`'connected'`, `'offline'`, `'unconfigured'`) for the three StatusPills. Written by section components via `useSetRigStatus`. |
 | `src/store/haTokenStore.jsx` | `HaTokenProvider` + `useHaToken`. Loads encrypted HA token from `user_secrets`, decrypts in-memory (auto-mode: `user.id` + `APP_SECRET`; passphrase-mode: user-entered). Exposes `plaintextToken`, `status`, `unlock`, `setToken`, `changeMode`, `clear`, `forgetOnDevice`, `requestUnlock`. |
 | `src/lib/supabase.js` | Configured Supabase client. `window.supabase` assigned in dev. |
@@ -99,7 +99,8 @@ All user-data tables are RLS-protected with `user_id` FK and policies:
 | `src/hooks/useTracks.js` | Track CRUD with IDB-first, Supabase sync, file upload to Storage, simplification. `importTrack` is the main entry point. |
 | `src/hooks/useWeather.js` | **Two exports:** `useWeather(lat, lng)` → `{ current, hourly, daily, alerts, loading, error, updatedAt }` — 15-min NWS forecast poll, adaptive 5/15-min alerts poll. Seeds from 30-min localStorage cache on mount. `useFireWeather(lat, lng)` → `{ alerts, loading }` — one-shot fire-specific NWS alerts; used directly by SafetyPage. |
 | `src/hooks/useSafety.js` | `useSafety(lat, lng)` → `{ fires, burnBans, aqi, loading, error, updatedAt }`. NIFC: 60-min bbox poll (100mi). AirNow: 30-min poll. WA DNR burn bans: 6h poll, WA-bounded (TODO: verify endpoint). `burnBans` returns null when outside WA. |
-| `src/utils/deriveThreats.js` | Pure function. `deriveThreats({ weather, safety, position, activeTrip })` → `threats[]` sorted by priority desc. Shape: `{ id, type, severity, headline, detail, distanceMi, bearing, trajectory, source, priority, actionable, surface[] }`. Surface rule: ≥60 → home+map+safety; ≥30 → map+safety; <30 → safety. Uses `geo.js` haversineKm. |
+| `src/utils/deriveThreats.js` | Pure function. `deriveThreats({ weather, safety, position, tripPhase })` → `threats[]` sorted by priority desc. Shape: `{ id, type, severity, headline, detail, distanceMi, bearing, trajectory, source, priority, actionable, surface[] }`. Surface rule: ≥60 → home+map+safety; ≥30 → map+safety; <30 → safety. Burns bans gated on `tripPhase.stage` in `{ready, loaded, travelling, parked}`. Wind advisories gated on `stage === 'parked'`. Uses `geo.js` haversineKm. |
+| `src/utils/deriveTripPhase.js` | Pure function. `deriveTripPhase({ activeTrip, trips, location, profile, now })` → `{ stage, phase, currentTrip, daysUntilDeparture, daysIntoTrip, daysRemaining, parkedDurationMin, distanceFromHomeMi, homeCoords, reason }`. Stages: `empty\|ready\|loaded\|travelling\|parked\|heading\|unloading`. `pickCurrentTrip` precedence: activeTrip → pre-trip reload → soonest planning → recent completed (48h). Date strings parsed with `T00:00:00`/`T23:59:59` suffix for local-tz safety. Home fallback: Kirkland `[-122.2087, 47.6815]`. |
 | `src/hooks/useCommunications.js` | GL-iNet router state via HA entity polling. Uses `plaintextToken` from `useHaToken`. |
 | `src/hooks/useHomeAssistant.js` | Full HA entity fetch — temp sensors, humidity, lights, scenes, battery sensors, system stats. Authenticated via `plaintextToken`. Triggers `requestUnlock` if token locked. |
 | `src/hooks/useEcoFlow.js` | EcoFlow MQTT telemetry hook. Returns `soc`, `totalInputWatts`, `totalOutputWatts`, `cycles`, `lastUpdated`. |
@@ -258,6 +259,7 @@ https://admin.vela-go.com/**
 - **Migrated HA entity IDs** — `ursa_minor_*` → `ursa_minor_2_*`, `refridgerator_*` → `iceco_fridge_*` across `useHomeAssistant.js`, `HomeAssistantCard.jsx`, and `useBatteries.js`.
 - **OBD GPS source (`useGpsSource`)** — `src/hooks/useGpsSource.js` polls 7 `sensor.chomp_gps_*` entities every 5 s via HA bulk `/api/states`; prefers OBD when online + fresh + <30 ft accuracy, falls back to browser `watchPosition`. `useGeolocation.js` deleted. `AppContext` gains `gpsSource`, `gpsUpdatedAt`, `obdOnline` alongside existing `location`/`gpsStatus`. `ip-based` gpsStatus dropped (no IP fallback in new hook).
 - **Weather + safety data layer** — `useWeather` rewritten: 15-min NWS forecast poll + adaptive 5/15-min alerts. User-Agent fixed to `'vela-go.com (dan@vela-go.com)'`. Returns `{ current, hourly, daily, alerts, ... }`. New `useSafety` hook (NIFC bbox + AirNow + WA DNR burn bans). New `deriveThreats` pure util. `AppContext` now exposes: backwards-compat `weather`/`weatherForecast`/`weatherLoading`/`weatherError` + new `weatherHourly`/`weatherAlerts`/`weatherUpdatedAt`/`safety`/`threats`. `VITE_AIRNOW_API_KEY` in `.env`. AirNow kept in `useAirQuality` (AppContext `aqi`/`aqiLoading`/`aqiError`) AND in `useSafety.aqi` (for `deriveThreats`). `location` wrapped in `useMemo` to stabilize the `threats` dep array.
+- **Slice 1 — Trip lifecycle state machine** — `deriveTripPhase` pure util + `tripPhase` on AppContext. Seven stages: `empty→ready→loaded→travelling→parked→heading→unloading`. `pickCurrentTrip` chain: `activeTrip` pointer → `status='pre-trip'` (reload recovery) → soonest planning → recent completed (48h). Date strings parsed with `T00:00:00`/`T23:59:59` for local-tz safety. `deriveThreats` updated: burn bans gated on `{ready,loaded,travelling,parked}`; wind advisories gated on `parked`.
 
 ---
 
@@ -307,6 +309,13 @@ Explicit decisions — **do not pick up without re-evaluating the tradeoff.**
 | `ip-based` dead branches in GPS consumers | `GpsStatus.jsx`, `HomePage`, `MorePage`, `RigPage`, `SafetyPage` still check `gpsStatus === 'ip-based'` — harmless dead code since `useGpsSource` never emits it. Remove in next GPS/UI pass. |
 | `binary_sensor.refrigerator_power` rename check | Verify in HA whether power entity was also renamed alongside humidity/battery; follow-up edit if so. |
 | SafetyPage migration from `useFireData` + `useFireWeather` | SafetyPage still uses `useFireData()` (global NIFC fetch) and `useFireWeather()` directly. Should migrate to consume `safety` and `weatherAlerts` from AppContext. Temporary double NIFC fetch until then. |
+| Collapse `useTripPhase` hook | `src/hooks/useTripPhase.js` is a simpler precursor to `deriveTripPhase`. Once `tripPhase` is consumed in UI, replace `useTripPhase` with a thin wrapper that reads `AppContext.tripPhase`. |
+| Add `home_lat`/`home_lng` to profiles schema | `deriveTripPhase` falls back to Kirkland `[-122.2087, 47.6815]` for all users. Schema migration + `HaTokenSetupModal` or Settings UI needed to capture home coords. |
+| Position-delta speed detection | `travelling` vs `parked` uses instantaneous `location.speed`. A ring buffer of last N positions with timestamps would give reliable low-speed detection when OBD GPS speed is stale. |
+| 1-min interval tick for `tripPhase` | `tripPhase` only re-derives when `trips/location/profile/activeTrip` change. A user parked all day won't flip `heading` at the right time. Add a 1-min `setInterval` that bumps a counter in deps to force re-derivation. |
+| Manual stage override | Testing aid and edge-case escape hatch. Thin localStorage key `vela-stage-override` that bypasses `deriveTripPhase` output when set. |
+| HA departure webhook on `empty→loaded` | Trigger a HA webhook/automation when `tripPhase.stage` transitions to `'loaded'` so automations (lock doors, pre-heat fridge, etc.) can fire automatically. |
+| Rename `trip.status='pre-trip'` | `'pre-trip'` means "currently selected/active trip" not "in pre-trip phase." Rename to `'in_progress'` or `'active'`. Requires DB migration + consumer sweep. |
 | WA DNR burn ban endpoint verification | `useSafety.js` uses `services.arcgis.com/jsIt88o09Q0r1j8h/.../DNR_Burn_Restrictions/...` — unverified. Fails silently. Verify URL and field names before relying on this data. |
 | Burn ban coverage outside WA | `useSafety` only fetches WA DNR burn bans. Oregon, Idaho, Montana burn bans unhandled. |
 | `deriveThreats` — SafetyPage + map consumers not yet built | `threats` is on AppContext but nothing reads it yet. Consume in SafetyPage, map overlay, homepage alert card. |
@@ -355,6 +364,7 @@ If a future session's context mentions any of these, they are **wrong**:
 | "Resolved" as a bug status | "Fixed" (matches `bug_reports` CHECK constraint) |
 | "AuthGate renders SignInPage inline on no-session" | It Navigates to `/login`; inline sign-in only at `/login` |
 | "localStorage for HA token" | Encrypted `user_secrets` (Phase 2h). Migration path removed. |
+| "`trip.status='pre-trip'` means user is in pre-trip phase" | It means this trip is **currently selected as `activeTrip`**. The lifecycle phase is derived separately via `deriveTripPhase` / `AppContext.tripPhase`. |
 | "bulkSyncGearToSupabase is the sync path" | Per-item sync in `useSyncOnLogin` (Phase 2c.5.1). Bulk function is dead. |
 | "`vela-ha-url` localStorage for HA URL" | `user_secrets.ha_url` (plaintext column). Safari ITP evicts localStorage; URL now persisted to DB and read via `useHaToken()`. |
 

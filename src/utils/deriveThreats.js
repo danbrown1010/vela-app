@@ -3,11 +3,15 @@ import { haversineKm } from './geo'
 
 const KM_PER_MI = 1.60934
 
-export function deriveThreats({ weather, safety, position } = {}) {
+// Burn bans are irrelevant when no trip is in progress or imminent
+const BURN_BAN_STAGES = new Set(['ready', 'loaded', 'travelling', 'parked'])
+
+export function deriveThreats({ weather, safety, position, tripPhase } = {}) {
   if (!position?.lat || !position?.lng) return []
 
   const userLat = position.lat
   const userLng = position.lng
+  const stage   = tripPhase?.stage ?? null
   const threats = []
 
   // NWS weather alerts (already filtered to user's point by the API)
@@ -18,6 +22,9 @@ export function deriveThreats({ weather, safety, position } = {}) {
     const event    = p.event    ?? ''
     const severity = p.severity ?? 'Unknown'
     const urgency  = p.urgency  ?? 'Unknown'
+
+    // Wind advisories are only actionable at camp — suppress when not parked
+    if (/wind advisory|wind chill advisory/i.test(event) && stage !== 'parked') continue
 
     let base = 30
     if (/emergency/i.test(event)) base = 90
@@ -111,8 +118,8 @@ export function deriveThreats({ weather, safety, position } = {}) {
     }
   }
 
-  // WA DNR burn bans
-  for (const ban of (safety?.burnBans ?? [])) {
+  // WA DNR burn bans — only relevant when actively planning or on a trip
+  if (BURN_BAN_STAGES.has(stage)) for (const ban of (safety?.burnBans ?? [])) {
     const status = ban.properties?.BurnBanStatus
     if (!status || /no restriction/i.test(status)) continue
 
