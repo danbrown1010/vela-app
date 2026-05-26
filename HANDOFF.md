@@ -253,6 +253,7 @@ https://admin.vela-go.com/**
 - **HANDOFF.md** — created and committed.
 - **`isSensorOffline` battery guard fix** — `isSensorOffline` no longer treats missing/unavailable battery entities as offline — temperature renders when battery sensor is absent or not yet reporting.
 - **Migrated HA entity IDs** — `ursa_minor_*` → `ursa_minor_2_*`, `refridgerator_*` → `iceco_fridge_*` across `useHomeAssistant.js`, `HomeAssistantCard.jsx`, and `useBatteries.js`.
+- **OBD GPS source (`useGpsSource`)** — `src/hooks/useGpsSource.js` polls 7 `sensor.chomp_gps_*` entities every 5 s via HA bulk `/api/states`; prefers OBD when online + fresh + <30 ft accuracy, falls back to browser `watchPosition`. `useGeolocation.js` deleted. `AppContext` gains `gpsSource`, `gpsUpdatedAt`, `obdOnline` alongside existing `location`/`gpsStatus`. `ip-based` gpsStatus dropped (no IP fallback in new hook).
 
 ---
 
@@ -289,15 +290,18 @@ Explicit decisions — **do not pick up without re-evaluating the tradeoff.**
 | Item | Reason deferred |
 |------|----------------|
 | Background GPS tracking | iOS PWA can't do true background GPS. Decision: GPX import only. Future path: Capacitor wrapper if priority changes. |
-| Starlink dish telemetry | UX cost of cloud cookie auth too high; no first-party consumer API. |
+| ~~Starlink dish telemetry~~ | ~~UX cost of cloud cookie auth too high; no first-party consumer API.~~ **Shipped via HA — entity IDs may need updating (separate task).** |
 | Slate AX uplink detection | Security tradeoff of exposing router RPC unacceptable. |
-| OBD-II via Veepeak BLE | No mature HA-native generic ELM327. Path: fork `pbutterworth/nissan-leaf-obd-ble` or buy OBDLink CX/MX+ WiFi adapter. |
+| ~~OBD-II via Veepeak BLE~~ | ~~No mature HA-native generic ELM327.~~ **Shipped via HA OBD integration — GPS entities flowing through `useGpsSource`.** |
 | `pendingSync.js` unused imports | `getPendingSaves` and `getPendingTrackSaves` imported but never referenced (`no-unused-vars`). One-line fix each; do alongside future pendingSync work. |
 | Unified IDB queue refactor | Five separate queues today (gear IDB flag, gear localStorage deletes, track IDB flag, track localStorage deletes, trip localStorage saves/deletes). Consolidate to a single typed operation queue in IDB. Own session. |
 | Residual hardcoded hex in RigPage live components | `SensorBatteriesSummary` uses `'#22c55e'` / `'#ef4444'`; `EcoflowCompactRow` uses `'#ef4444'`. Map to `var(--status-connected)` / `var(--status-offline)`. Phase 2d predated 2f; pick up in a future 2d.2. |
 | vela-admin Phase 2d–2h | No hex sweep, no lint pass, no dead code audit. 30-min mirror pass if admin surfaces to testers. |
 | `useSyncOnLogin` full table scan | Fetches all gear on every login even with no pending writes. Skip fetch if `pending_sync` count is 0 AND last sync was recent. Fine at current scale (~200 items). |
 | `bulkSyncGearToSupabase` dead export | Replaced by per-item sync in 2c.5.1. Function still exported from `syncManager.js`. Remove in next cleanup pass. |
+| `HA_URL` resolution duplicated | `useGpsSource.js:21` mirrors `useHomeAssistant.js:14` exactly. Extract to a shared `getHaUrl()` util when touching either file next. |
+| `ip-based` dead branches in GPS consumers | `GpsStatus.jsx`, `HomePage`, `MorePage`, `RigPage`, `SafetyPage` still check `gpsStatus === 'ip-based'` — harmless dead code since `useGpsSource` never emits it. Remove in next GPS/UI pass. |
+| `binary_sensor.refrigerator_power` rename check | Verify in HA whether power entity was also renamed alongside humidity/battery; follow-up edit if so. |
 
 ---
 
@@ -403,3 +407,9 @@ remove it before then.
 secret). The encrypted token is in `user_secrets.ha_token_encrypted`. Both are accessed
 via `useHaToken()`. Do not read `vela-ha-url` from localStorage — Safari ITP will evict
 it within days on a low-traffic device.
+
+**Provider order in `App.jsx`: `HaTokenProvider` wraps `AppProvider`.** Any hook that
+calls `useHaToken()` from within `AppProvider` (e.g. `useGpsSource` in `store/index.jsx`)
+depends on this order — if `HaTokenProvider` is ever moved back inside `AppProvider`, those
+hooks will silently receive the null-context fallback (`plaintextToken: null`) and stop
+working. The swap was made to allow `AppContext` to consume HA token state directly.

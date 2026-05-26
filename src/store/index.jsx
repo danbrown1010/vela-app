@@ -1,6 +1,6 @@
 import { useState, useEffect, createContext, useContext, useCallback } from 'react'
 import { v4 as uuidv4 } from 'uuid'
-import { useGeolocation } from '../hooks/useGeolocation'
+import { useGpsSource } from '../hooks/useGpsSource'
 import { useWeather } from '../hooks/useWeather'
 import { useAirQuality } from '../hooks/useAirQuality'
 import { useEcoFlow } from '../hooks/useEcoFlow'
@@ -220,7 +220,24 @@ export function AppProvider({ children, user = null, profile = null, signOut = (
     localStorage.setItem('vela-trip-labels', v ? 'true' : 'false')
   }, [])
 
-  const { location, status: gpsStatus } = useGeolocation()
+  const gpsResult = useGpsSource()
+  const location = gpsResult.source === null ? null : {
+    lat:      gpsResult.lat,
+    lng:      gpsResult.lng,
+    accuracy: gpsResult.accuracy,   // METERS — unchanged for all consumers
+    altitude: gpsResult.altitude,
+    timestamp: gpsResult.timestamp,
+    heading:  gpsResult.heading,
+    speed:    gpsResult.speed,
+  }
+  const gpsStatus =
+    gpsResult.source !== null && (gpsResult.accuracy ?? Infinity) < 100
+      ? 'locked'
+      : gpsResult.browserError === 'denied'
+      ? 'denied'
+      : gpsResult.browserError === 'unavailable' && !gpsResult.obdOnline
+      ? 'unavailable'
+      : 'requesting'
   const { data: ecoflowData } = useEcoFlow(ECOFLOW_DEVICES.delta2Max.sn)
   const ecoflowSoc      = ecoflowData?.soc ?? null
   const ecoflowCharging = ecoflowData != null ? (ecoflowData.totalInputWatts ?? 0) > 0 : null
@@ -250,6 +267,9 @@ export function AppProvider({ children, user = null, profile = null, signOut = (
       petsEnabled, setPetsEnabled,
       tripLabels, setTripLabels,
       location, gpsStatus,
+      gpsSource: gpsResult.source,
+      gpsUpdatedAt: gpsResult.updatedAt,
+      obdOnline: gpsResult.obdOnline,
       ecoflowSoc, ecoflowCharging,
       weather, weatherForecast, weatherLoading, weatherError,
       aqi, aqiLoading, aqiError,

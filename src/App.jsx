@@ -59,12 +59,12 @@ function AppContent() {
   }
 
   return (
-    <AppProvider user={user} profile={profile} signOut={signOut} signInWithGoogle={signInWithGoogle}>
-      <HaTokenProvider userId={user.id}>
+    <HaTokenProvider userId={user.id}>
+      <AppProvider user={user} profile={profile} signOut={signOut} signInWithGoogle={signInWithGoogle}>
         <AppShell user={user} />
-      </HaTokenProvider>
-      <BugReportButton />
-    </AppProvider>
+        <BugReportButton />
+      </AppProvider>
+    </HaTokenProvider>
   )
 }
 
