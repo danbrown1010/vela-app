@@ -75,6 +75,13 @@ export function useHomeAssistant() {
       'sensor.system_monitor_processor_temperature',
       'sensor.system_monitor_disk_free',
       'sensor.system_monitor_disk_use_percent',
+      'sensor.chomp_fuel_level',
+      'sensor.chomp_engine_coolant_temperature',
+      'sensor.chomp_voltage_obd_adapter',
+      'sensor.chomp_distance_to_empty_estimated',
+      'sensor.chomp_trip_distance',
+      'sensor.chomp_ambient_air_temperature',
+      'sensor.chomp_engine_rpm',
     ]
 
     try {

@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useTripPhase } from '../hooks/useTripPhase'
 import { useTripDocs } from '../hooks/useTripDocs'
 import { useAppStore } from '../store/index'
+import { useChompTelemetry } from '../hooks/useChompTelemetry'
 import { getGearItems } from '../utils/gearStorage'
 import { Skeleton } from '../components/Skeleton'
 import { StatusBadge } from '../components/StatusBadge'
@@ -445,8 +446,99 @@ function PreTripHome({ activeTrip, daysUntil, onEditTrip }) {
 
 // ─── On-trip ──────────────────────────────────────────────────────────────────
 
+function FuelCard({ fuel }) {
+  const { percent, distanceToEmptyMi } = fuel
+  const isLow = percent != null && percent < 20
+  return (
+    <div style={{
+      background: 'var(--bg-card)',
+      border: `1px solid ${isLow ? 'var(--status-warning)' : 'var(--border)'}`,
+      borderRadius: 16, padding: 16,
+    }}>
+      <div style={{
+        fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase',
+        letterSpacing: '0.1em', color: 'var(--text-tertiary)', marginBottom: 8,
+      }}>Fuel</div>
+      <div style={{
+        fontSize: 36, fontWeight: 700, lineHeight: 1,
+        color: isLow ? 'var(--status-warning)' : 'var(--text-primary)',
+        fontFamily: 'var(--font-body)',
+      }}>
+        {percent != null ? `${Math.round(percent)}%` : '—'}
+      </div>
+      {distanceToEmptyMi != null && (
+        <div style={{ fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', marginTop: 4 }}>
+          ~{Math.round(distanceToEmptyMi)} mi to empty
+        </div>
+      )}
+      {isLow && (
+        <div style={{
+          marginTop: 10, padding: '8px 10px',
+          background: 'color-mix(in srgb, var(--status-warning) 10%, transparent)',
+          borderRadius: 8,
+          fontSize: 12, color: 'var(--status-warning)', fontFamily: 'var(--font-body)',
+        }}>
+          Low fuel — find station soon
+        </div>
+      )}
+    </div>
+  )
+}
+
+function EngineCard({ engine }) {
+  const { coolantF, batteryV, status } = engine
+  const isWarn = status === 'warning' || status === 'critical'
+  const dotColor = status === 'critical' ? 'var(--status-offline)'
+    : status === 'warning'  ? 'var(--status-warning)'
+    : 'var(--status-connected)'
+  const label = status === 'critical' ? 'Engine critical'
+    : status === 'warning' ? 'Coolant temperature high'
+    : 'Running normal'
+  const detail = [
+    coolantF != null && `${Math.round(coolantF)}°F`,
+    batteryV != null && `${batteryV.toFixed(1)} V`,
+  ].filter(Boolean).join(' · ')
+  return (
+    <div style={{
+      background: 'var(--bg-card)',
+      border: `1px solid ${isWarn ? 'color-mix(in srgb, var(--status-warning) 40%, transparent)' : 'var(--border)'}`,
+      borderRadius: 16, padding: 16,
+    }}>
+      <div style={{
+        fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase',
+        letterSpacing: '0.1em', color: 'var(--text-tertiary)', marginBottom: 10,
+      }}>Engine</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ width: 8, height: 8, borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
+        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'var(--font-body)' }}>
+          {label}
+        </div>
+      </div>
+      {detail && (
+        <div style={{
+          fontSize: 12, fontFamily: 'var(--font-mono)',
+          color: 'var(--text-secondary)', marginTop: 4, marginLeft: 16,
+        }}>
+          {detail}{status === 'warning' && ' (normal: 160–220°F)'}
+        </div>
+      )}
+      {isWarn && (
+        <div style={{
+          marginTop: 10, padding: '8px 10px',
+          background: 'color-mix(in srgb, var(--status-warning) 10%, transparent)',
+          borderRadius: 8,
+          fontSize: 12, color: 'var(--status-warning)', fontFamily: 'var(--font-body)',
+        }}>
+          {status === 'critical' ? 'Engine temperature critical — stop safely' : 'Coolant temperature high'}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function OnTripHome({ activeTrip, dayOf, daysRemaining, totalDays, onNavigateToDocs }) {
-  const { accent, deactivateTrip, publishTrip, unpublishTrip, ecoflowSoc, ecoflowCharging, user } = useAppStore()
+  const { accent, deactivateTrip, publishTrip, unpublishTrip, ecoflowSoc, ecoflowCharging, user, weather, weatherLoading } = useAppStore()
+  const { isOnline, fuel, engine } = useChompTelemetry()
   const { docs: tripDocs, getDocUrl } = useTripDocs(activeTrip?.id, user?.id)
   const [watchTrip, setWatchTrip]     = useState(null)
   const [previewDoc, setPreviewDoc]   = useState(null)
@@ -494,6 +586,34 @@ function OnTripHome({ activeTrip, dayOf, daysRemaining, totalDays, onNavigateToD
       </div>
 
       {watchTrip && <CrewWatchModal trip={watchTrip} onClose={() => setWatchTrip(null)} />}
+
+      {/* Weather row */}
+      {weather && !weatherLoading && (
+        <div style={{
+          background: 'var(--bg-card)', border: '1px solid var(--border)',
+          borderRadius: 12, padding: '10px 14px',
+          display: 'flex', alignItems: 'center', gap: 8,
+        }}>
+          <WeatherIcon description={weather.shortForecast} size={16} color="var(--text-secondary)" />
+          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'var(--font-body)' }}>
+            {weather.temperature}°F
+          </div>
+          <div style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {weather.shortForecast}
+          </div>
+          {weather.windSpeed && (
+            <div style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)', flexShrink: 0 }}>
+              {weather.windSpeed} {weather.windDirection}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Fuel card — hidden when OBD offline or entity unavailable */}
+      {isOnline && fuel && <FuelCard fuel={fuel} />}
+
+      {/* Engine card — hidden when OBD offline or entity unavailable */}
+      {isOnline && engine && <EngineCard engine={engine} />}
 
       <div className="grid grid-cols-3 gap-2">
         <LiveStat

@@ -12,6 +12,7 @@ import { useEcoflowConfig } from '../hooks/useEcoflowConfig'
 import { useBatteries } from '../hooks/useBatteries'
 import { useEcoFlow } from '../hooks/useEcoFlow'
 import { useRigStatus, useSetRigStatus } from '../store/rigStatus'
+import { useChompTelemetry } from '../hooks/useChompTelemetry'
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -119,6 +120,7 @@ function RigPageContent() {
       {/* Telemetry panel — driven by active integration */}
       <div ref={scrollRef} onScroll={handleScroll} style={{ flex: 1, overflowY: 'auto' }}>
         <div className="p-4 flex flex-col gap-5" style={{ paddingBottom: 'calc(24px + env(safe-area-inset-bottom))' }}>
+          {activeIntegration === 'ecoflow' && <JeepBatteryCard />}
           {activeIntegration === 'ecoflow' && <EcoflowSection onShowInfo={setEcoInfo} />}
           {activeIntegration === 'ecoflow' && (
             <SensorBatteriesSummary onTap={() => setActiveIntegration('home_assistant')} />
@@ -517,6 +519,100 @@ function EcoflowCompactRow({ device, onTap, showDivider, onStatus }) {
         ›
       </div>
     </button>
+  )
+}
+
+// ─── Jeep Battery (OBD) ──────────────────────────────────────────────────────
+
+function JeepBatteryCard() {
+  const { isOnline, engine } = useChompTelemetry()
+
+  if (!isOnline || !engine) {
+    return (
+      <SectionShell title="Jeep Battery">
+        <div style={{
+          background: 'var(--bg-card)', border: '1px solid var(--border)',
+          borderRadius: 14, padding: '12px 14px',
+          display: 'flex', alignItems: 'center', gap: 10,
+        }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--border)', flexShrink: 0 }} />
+          <div style={{ fontSize: 13, color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)' }}>
+            OBD offline — Jeep not connected
+          </div>
+        </div>
+      </SectionShell>
+    )
+  }
+
+  const { batteryV, rpm } = engine
+  const running = rpm != null && rpm > 0
+  const batteryStatus = batteryV == null ? null
+    : running
+    ? (batteryV < 12.5 ? 'critical' : batteryV < 13.0 ? 'warning' : 'normal')
+    : (batteryV < 12.0 ? 'critical' : batteryV < 12.4 ? 'warning' : 'normal')
+
+  const dotColor = batteryStatus === 'critical' ? 'var(--status-offline)'
+    : batteryStatus === 'warning' ? 'var(--status-warning)'
+    : batteryStatus === 'normal'  ? 'var(--status-connected)'
+    : 'var(--text-tertiary)'
+
+  const valueColor = batteryStatus === 'critical' ? 'var(--status-offline)'
+    : batteryStatus === 'warning' ? 'var(--status-warning)'
+    : 'var(--text-primary)'
+
+  const borderColor = batteryStatus === 'critical'
+    ? 'color-mix(in srgb, var(--status-offline) 40%, transparent)'
+    : batteryStatus === 'warning'
+    ? 'color-mix(in srgb, var(--status-warning) 40%, transparent)'
+    : 'var(--border)'
+
+  const statusLabel = batteryStatus === 'critical' ? 'Voltage low'
+    : batteryStatus === 'warning' ? 'Voltage marginal'
+    : running ? 'Charging'
+    : 'Idle'
+
+  return (
+    <SectionShell title="Jeep Battery">
+      <div style={{
+        background: 'var(--bg-card)',
+        border: `1px solid ${borderColor}`,
+        borderRadius: 14,
+        padding: '12px 14px',
+      }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          marginBottom: rpm != null ? 8 : 0,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
+            <div style={{
+              fontSize: 22, fontWeight: 700,
+              color: valueColor, fontFamily: 'var(--font-body)',
+            }}>
+              {batteryV != null ? `${batteryV.toFixed(1)} V` : '—'}
+            </div>
+          </div>
+          <div style={{
+            fontSize: 11, fontFamily: 'var(--font-mono)',
+            color: batteryStatus === 'normal' ? 'var(--status-connected)'
+              : batteryStatus === 'warning'   ? 'var(--status-warning)'
+              : batteryStatus === 'critical'  ? 'var(--status-offline)'
+              : 'var(--text-tertiary)',
+            textTransform: 'uppercase', letterSpacing: '0.06em',
+          }}>
+            {statusLabel}
+          </div>
+        </div>
+        {rpm != null && (
+          <div style={{
+            fontSize: 12, fontFamily: 'var(--font-mono)',
+            color: 'var(--text-tertiary)', marginLeft: 18,
+          }}>
+            {Math.round(rpm).toLocaleString()} RPM
+          </div>
+        )}
+      </div>
+    </SectionShell>
   )
 }
 
