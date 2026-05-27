@@ -272,6 +272,19 @@ https://admin.vela-go.com/**
 - **Scroll fix — OnTripHome/PreTripHome/PostTripHome unreachable content** — `minHeight: '100%'` on the scroll container div in all three non-Idle home views changed to `height: '100%'`. Root cause: `minHeight` lets the container grow to content height, so `overflow-y: auto` never fires and the AppShell's `overflow: hidden` clips excess content. Bug latent since Slice 1; became visible in Slice 2 when `FuelCard` + `EngineCard` + weather row pushed `OnTripHome` over the viewport threshold. `IdleHome` was unaffected (uses `flex: 1` inner container inside an explicit `height: 100%` outer). `PreTripHome` and `PostTripHome` preemptively fixed by the same change. One-line fix per view (`1d56b0b`).
 - **Slice 2d.2 — Action button wiring** — `ActionButtons` in `ThreatHeadline.jsx` (shared by `ThreatDetailSheet` via named export) dispatches `vela:navigate-safety` custom event with `focus` detail. `App.jsx` listens, switches `activeTab` to `'safety'`, passes `focus` + `onFocusConsumed` to `SafetyPage`. `SafetyPage` scrolls to the anchored section by `id` via `useEffect`, then clears via `onFocusConsumed`. Button reduction (honesty pass): removed `'Escape routes'` (no real section); removed `weather_alert` button (`weather_alert` detail is in ThreatDetailSheet, no checklist destination); `wildfire` / `air_quality` / `burn_ban` each render a single `'View on Safety'` button. `ThreatDetailSheet` passes `onAction={onClose}` into `ActionButtons` so the sheet closes before tab switch. Anchors: `id=safety-fire-status` on all three `FireStatus` return divs; `id=safety-conditions` on `Conditions` outermost div. Custom event pattern matches `vela:open-settings`. No new deps, hooks, or CSS tokens.
 
+- **Slice 3 — Map overlays + threat wiring** — Four new overlay components under `src/components/map/`:
+  - `FireOverlay` — NIFC fire perimeters from `useFireData` (global cache), severity color ramp via `SEVERITY_HEX` using `DailyAcres??GISAcres` interpolation; fill + outline layers; click target `fire-fill`.
+  - `AlertOverlay` — NWS weather alert polygons filtered to non-null geometry; severity color via match expression; `line-dasharray` dropped (MapLibre paint spec limitation); click target `alert-fill`.
+  - `AqiOverlay` — EPA 6-band circle point at user GPS position using `aqi?.aqi ?? null` from AppContext.
+  - `PrecipOverlay` — RainViewer public radar tiles (no key); fetched on mount regardless of toggle state; 10-min refresh; `raster-opacity: 0.5`.
+  - `MapFeaturePopup` — react-map-gl `<Popup>` fallback for clicked features with no matching threat; `featureCentroid()` bbox midpoint (no Turf); shows IncidentName/acres/containment for fires, event+headline for alerts.
+  - `findThreatForMapFeature` util — fire match by `IncidentName→threat.headline` (id is volatile, includes distMi); alert match by `feature.properties.id → threat.id`.
+  - `SEVERITY_HEX` exported from `ThreatHeadline.jsx` — hardcoded hex required because MapLibre paint expressions cannot resolve CSS variables.
+  - `useFireData` outFields updated to include `DailyAcres,PercentContained` for popup display.
+  - `useSafety` NIFC bbox sign guard — `lng > 0 ? -lng : lng` guards against OBD GPS sources reporting unsigned Western US longitude.
+  - `TripPage` LAYER_CONFIG extended with `alerts` (on), `precip` (off), `aqi` (on); all three persisted to `localStorage` keyed `vela-layer-{id}`. Map z-order bottom→top: Precip → Alerts → Fires → route-line → AQI → GPS Marker → Waypoints → Tracks.
+  - `handleMapClick` in TripPage dispatches to `ThreatDetailSheet` when a matching threat is found via `findThreatForMapFeature`; falls back to `MapFeaturePopup` for fires outside the bbox or unmatched alerts.
+
 ---
 
 ## Shipped (prior sessions)
@@ -321,6 +334,8 @@ Explicit decisions — **do not pick up without re-evaluating the tradeoff.**
 | `ip-based` dead branches in GPS consumers | `GpsStatus.jsx`, `HomePage`, `MorePage`, `RigPage`, `SafetyPage` still check `gpsStatus === 'ip-based'` — harmless dead code since `useGpsSource` never emits it. Remove in next GPS/UI pass. |
 | `binary_sensor.refrigerator_power` rename check | Verify in HA whether power entity was also renamed alongside humidity/battery; follow-up edit if so. |
 | SafetyPage migration from `useFireData` + `useFireWeather` | SafetyPage still uses `useFireData()` (global NIFC fetch) and `useFireWeather()` directly. Should migrate to consume `safety` and `weatherAlerts` from AppContext. Temporary double NIFC fetch until then. |
+| `beforeId` guard when `route` layer is also off | Overlay `beforeId` chain assumes `route-line` exists. If user disables route layer, `beforeId` could reference a non-existent layer and MapLibre may throw. Add existence check or use a fixed anchor layer that's always present. |
+| Two fire datasets (useSafety bbox vs useFireData global) | `deriveThreats` reads `safety.fires` (bbox-limited, ~100mi radius). FireOverlay shows `useFireData` fires (global cached). Clicking a fire outside the bbox shows `MapFeaturePopup` fallback — not wired to ThreatDetailSheet. If real-time threat wiring for out-of-bbox fires is needed, wire `useFireData` threats separately or expand useSafety radius. |
 | Collapse `useTripPhase` hook | `src/hooks/useTripPhase.js` is a simpler precursor to `deriveTripPhase`. Once `tripPhase` is consumed in UI, replace `useTripPhase` with a thin wrapper that reads `AppContext.tripPhase`. |
 | Add `home_lat`/`home_lng` to profiles schema | `deriveTripPhase` falls back to Kirkland `[-122.2087, 47.6815]` for all users. Schema migration + `HaTokenSetupModal` or Settings UI needed to capture home coords. |
 | Position-delta speed detection | `travelling` vs `parked` uses instantaneous `location.speed`. A ring buffer of last N positions with timestamps would give reliable low-speed detection when OBD GPS speed is stale. |
@@ -330,7 +345,7 @@ Explicit decisions — **do not pick up without re-evaluating the tradeoff.**
 | Rename `trip.status='pre-trip'` | `'pre-trip'` means "currently selected/active trip" not "in pre-trip phase." Rename to `'in_progress'` or `'active'`. Requires DB migration + consumer sweep. |
 | WA DNR burn ban endpoint verification | `useSafety.js` uses `services.arcgis.com/jsIt88o09Q0r1j8h/.../DNR_Burn_Restrictions/...` — unverified. Fails silently. Verify URL and field names before relying on this data. |
 | Burn ban coverage outside WA | `useSafety` only fetches WA DNR burn bans. Oregon, Idaho, Montana burn bans unhandled. |
-| `deriveThreats` — SafetyPage + map consumers not yet built | `threats` is on AppContext but nothing reads it yet. Consume in SafetyPage, map overlay, homepage alert card. |
+| `deriveThreats` — SafetyPage consumer not yet built | Map overlay wired in Slice 3 (FireOverlay/AlertOverlay click → ThreatDetailSheet). SafetyPage still reads threats from its own hooks rather than AppContext. |
 | Pre-trip threat caching | For trip planning, `deriveThreats` should run against waypoints, not just current position. Cache GeoJSON in IDB per waypoint bbox. |
 | Tier 3 "More telemetry" bottom sheet | "More telemetry →" button stub exists on Engine zone in RigPage Env Climate sub-tab. Needs a 31-field layout component showing full OBD data (RPM, ambient temp, distance travelled, etc.). |
 | ~~Threat headline injection on Home (Slice 2b)~~ | **Shipped.** See Slice 2b in Shipped section. |
