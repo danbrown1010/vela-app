@@ -12,7 +12,9 @@ import { useEcoflowConfig } from '../hooks/useEcoflowConfig'
 import { useBatteries } from '../hooks/useBatteries'
 import { useEcoFlow } from '../hooks/useEcoFlow'
 import { useSystemStatus, useSetSystemStatus } from '../store/systemStatus'
+import { useNetworkStatus } from '../hooks/useNetworkStatus'
 import { useChompTelemetry } from '../hooks/useChompTelemetry'
+import { envToCosState } from '../utils/systemStatus'
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -50,6 +52,7 @@ function RigPageContent() {
   }
   const { power, comms, env } = useSystemStatus()
   const { accent, location, gpsStatus } = useAppStore()
+  const network = useNetworkStatus()
 
   // ── Collapsing header ────────────────────────────────────────────────────────
   const scrollRef = useRef(null)
@@ -95,6 +98,8 @@ function RigPageContent() {
                  : 'off',
             accuracyM: Math.round(location?.accuracy ?? 0),
           }}
+          cos={{ state: envToCosState(env) }}
+          net={{ state: network.state }}
           scrollProgress={scrollProgress}
           onOpenSettings={() => window.dispatchEvent(new CustomEvent('vela:open-settings', { detail: {} }))}
         >

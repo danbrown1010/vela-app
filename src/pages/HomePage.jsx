@@ -16,6 +16,9 @@ import { TypeBadge } from '../components/TripTypeIcons'
 import { IconSun, IconCloud, IconCloudSun, IconCloudRain, IconCloudSnow, IconWind, IconPlus, IconEdit, IconTrash, IconCheck, IconChevronRight } from '../components/icons'
 import { CrewWatchModal } from '../components/CrewWatchModal'
 import { GpsStatus } from '../components/GpsStatus'
+import { useSystemStatus } from '../store/systemStatus'
+import { useNetworkStatus } from '../hooks/useNetworkStatus'
+import { envToCosState } from '../utils/systemStatus'
 
 export default function HomePage({ onPlanTrip, onEditTrip, onNavigateToDocs }) {
   const tripPhase = useTripPhase()
@@ -130,6 +133,8 @@ function IdleHome({ onPlanTrip, onEditTrip, onNavigateToDocs }) {
   const firstName = getFirstName(profile, user)
   const gpsState = gpsStatus === 'locked' ? 'locked' : (gpsStatus === 'requesting' || gpsStatus === 'ip-based') ? 'searching' : 'off'
   const gpsAccuracyM = Math.round(location?.accuracy ?? 0)
+  const envStatus = useSystemStatus('env')
+  const network   = useNetworkStatus()
   const { scrollRef, pullY, onTouchStart, onTouchMove, onTouchEnd } = usePullToRefresh(refreshHomeData)
   const [watchTrip, setWatchTrip] = useState(null)
   const { docs: tripDocs } = useTripDocs(activeTrip?.id, user?.id)
@@ -155,6 +160,8 @@ function IdleHome({ onPlanTrip, onEditTrip, onNavigateToDocs }) {
         image={{ src: '/vela-lockup.png', alt: 'VELA', shape: 'wide' }}
         subtitle="GO FURTHER."
         gps={{ state: gpsState, accuracyM: gpsAccuracyM }}
+        cos={{ state: envToCosState(envStatus) }}
+        net={{ state: network.state }}
         onOpenSettings={() => window.dispatchEvent(new CustomEvent('vela:open-settings', { detail: {} }))}
       />
       <div

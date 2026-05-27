@@ -1,5 +1,8 @@
 import { useState } from 'react'
 import { useAppStore } from '../store/index'
+import { useSystemStatus } from '../store/systemStatus'
+import { useNetworkStatus } from '../hooks/useNetworkStatus'
+import { envToCosState } from '../utils/systemStatus'
 import { UserAvatar } from '../components/UserAvatar'
 import { CollapsingHeader } from '../components/CollapsingHeader'
 import {
@@ -42,6 +45,8 @@ export default function MorePage({ onNavigate }) {
   const displayName = profile?.name || user?.user_metadata?.full_name || user?.email || 'User'
   const gpsState = gpsStatus === 'locked' ? 'locked' : (gpsStatus === 'requesting' || gpsStatus === 'ip-based') ? 'searching' : 'off'
   const gpsAccuracyM = Math.round(location?.accuracy ?? 0)
+  const envStatus = useSystemStatus('env')
+  const network   = useNetworkStatus()
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -53,6 +58,8 @@ export default function MorePage({ onNavigate }) {
         uppercaseTitle={false}
         badge={{ label: 'PRO', tone: 'success' }}
         gps={{ state: gpsState, accuracyM: gpsAccuracyM }}
+        cos={{ state: envToCosState(envStatus) }}
+        net={{ state: network.state }}
         onOpenSettings={() => window.dispatchEvent(new CustomEvent('vela:open-settings', { detail: {} }))}
       />
 

@@ -10,6 +10,9 @@ import { useFireWeather } from '../hooks/useWeather'
 import { useAppStore } from '../store/index'
 import { StatusBadge } from '../components/StatusBadge'
 import { CollapsingHeader } from '../components/CollapsingHeader'
+import { useSystemStatus } from '../store/systemStatus'
+import { useNetworkStatus } from '../hooks/useNetworkStatus'
+import { envToCosState } from '../utils/systemStatus'
 
 const SEED = {
   evac:       { yourZone: 'Clear', advisory: 2, warning: 1, order: 0 },
@@ -73,6 +76,8 @@ export default function SafetyPage({ focus, onFocusConsumed }) {
   const { location, aqi, gpsStatus } = useAppStore()
   const gpsState = gpsStatus === 'locked' ? 'locked' : (gpsStatus === 'requesting' || gpsStatus === 'ip-based') ? 'searching' : 'off'
   const gpsAccuracyM = Math.round(location?.accuracy ?? 0)
+  const envStatus = useSystemStatus('env')
+  const network   = useNetworkStatus()
   const { fires, loading: fireLoading, error: fireError, lastUpdated, refetch: refetchFires } = useFireData()
   const { alerts } = useFireWeather(location?.lat, location?.lng)
   const { scrollRef, pullY, onTouchStart, onTouchMove, onTouchEnd } = usePullToRefresh(refetchFires)
@@ -131,6 +136,8 @@ export default function SafetyPage({ focus, onFocusConsumed }) {
           tone: monitorBadge === 'danger' ? 'danger' : monitorBadge === 'warn' ? 'warn' : 'success',
         }}
         gps={{ state: gpsState, accuracyM: gpsAccuracyM }}
+        cos={{ state: envToCosState(envStatus) }}
+        net={{ state: network.state }}
         onOpenSettings={() => window.dispatchEvent(new CustomEvent('vela:open-settings', { detail: {} }))}
       />
       <div
