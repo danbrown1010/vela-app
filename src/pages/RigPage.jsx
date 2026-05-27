@@ -12,6 +12,7 @@ import { useEcoflowConfig } from '../hooks/useEcoflowConfig'
 import { useBatteries } from '../hooks/useBatteries'
 import { useEcoFlow } from '../hooks/useEcoFlow'
 import { useSystemStatus, useSetSystemStatus } from '../store/systemStatus'
+import { EngineTab } from '../components/rig/EngineTab'
 import { useNetworkStatus } from '../hooks/useNetworkStatus'
 import { useChompTelemetry } from '../hooks/useChompTelemetry'
 import { envToCosState } from '../utils/systemStatus'
@@ -136,22 +137,7 @@ function RigPageContent() {
           {activeIntegration === 'home_assistant' && (
             <HomeAssistantCard />
           )}
-          {activeIntegration === 'engine' && (
-            <div style={{ padding: '0 0 8px' }}>
-              <div style={{
-                border: '0.5px dashed var(--border)',
-                borderRadius: 10,
-                padding: '24px 20px',
-                textAlign: 'center',
-                color: 'var(--text-tertiary)',
-                fontFamily: 'var(--font-mono)',
-                fontSize: 12,
-                letterSpacing: '0.08em',
-              }}>
-                ENGINE TELEMETRY · COMING IN NEXT PASS
-              </div>
-            </div>
-          )}
+          {activeIntegration === 'engine' && <EngineTab />}
         </div>
       </div>
 
