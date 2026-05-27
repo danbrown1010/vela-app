@@ -19,10 +19,12 @@ function inWashington(lat, lng) {
 }
 
 function nifcBboxUrl(lat, lng) {
+  // Western US longitudes must be negative; guard against GPS sources that omit the sign
+  const signedLng = lng > 0 ? -lng : lng
   const pad  = 1.5   // ~100 mi at PNW latitudes
-  const xmin = lng - pad
+  const xmin = signedLng - pad
   const ymin = lat - pad
-  const xmax = lng + pad
+  const xmax = signedLng + pad
   const ymax = lat + pad
   const params = new URLSearchParams({
     where:        '1=1',
@@ -63,7 +65,9 @@ export function useSafety(lat, lng) {
 
     const poll = async () => {
       try {
-        const r = await fetch(nifcBboxUrl(lat, lng), { signal: ctrl.signal })
+        const bboxUrl = nifcBboxUrl(lat, lng)
+        console.log('[NIFC bbox url]', bboxUrl)
+        const r = await fetch(bboxUrl, { signal: ctrl.signal })
         if (!r.ok) throw new Error(`NIFC ${r.status}`)
         const data = await r.json()
         setFires(data)
