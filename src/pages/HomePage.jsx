@@ -368,7 +368,7 @@ function PreTripHome({ activeTrip, daysUntil, onEditTrip }) {
   const pct = totalItems === 0 ? 0 : Math.round((totalChecked / totalItems) * 100)
 
   return (
-    <div className="overflow-y-auto" style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', padding: 16, gap: 16, paddingBottom: 'calc(24px + env(safe-area-inset-bottom))' }}>
+    <div className="overflow-y-auto" style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: 16, gap: 16, paddingBottom: 'calc(24px + env(safe-area-inset-bottom))' }}>
 
       {/* Snoozed alerts restore pill */}
       <SnoozedPill dismissedIds={dismissedIds} onRestore={clearDismissed} />
@@ -601,7 +601,7 @@ function OnTripHome({ activeTrip, dayOf, daysRemaining, totalDays }) {
 
   const closePreview = () => { setPreviewDoc(null); setPreviewUrl(null) }
   return (
-    <div className="overflow-y-auto" style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', padding: 16, gap: 16, paddingBottom: 'calc(24px + env(safe-area-inset-bottom))' }}>
+    <div className="overflow-y-auto" style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: 16, gap: 16, paddingBottom: 'calc(24px + env(safe-area-inset-bottom))' }}>
 
       {/* Snoozed alerts restore pill */}
       <SnoozedPill dismissedIds={dismissedIds} onRestore={clearDismissed} />
@@ -851,7 +851,7 @@ function PostTripHome({ activeTrip, totalDays }) {
   const done = checked.length === POST_TRIP_TASKS.length
 
   return (
-    <div className="overflow-y-auto" style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', padding: 16, gap: 16, paddingBottom: 'calc(24px + env(safe-area-inset-bottom))' }}>
+    <div className="overflow-y-auto" style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: 16, gap: 16, paddingBottom: 'calc(24px + env(safe-area-inset-bottom))' }}>
       <div style={{ paddingTop: 8 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#a78bfa', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Trip complete</p>
