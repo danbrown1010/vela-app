@@ -102,7 +102,7 @@ export function useTracks(userId, tripId = null) {
 
       return saved
     } catch (err) {
-      throw new Error(`Track import failed: ${err.message}`)
+      throw new Error(`Track import failed: ${err.message}`, { cause: err })
     }
   }, [userId])
 

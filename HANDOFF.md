@@ -266,6 +266,7 @@ https://admin.vela-go.com/**
 - **Slice 1 — Trip lifecycle state machine** — `deriveTripPhase` pure util + `tripPhase` on AppContext. Seven stages: `empty→ready→loaded→travelling→parked→heading→unloading`. `pickCurrentTrip` chain: `activeTrip` pointer → `status='pre-trip'` (reload recovery) → soonest planning → recent completed (48h). Date strings parsed with `T00:00:00`/`T23:59:59` for local-tz safety. `deriveThreats` updated: burn bans gated on `{ready,loaded,travelling,parked}`; wind advisories gated on `parked`.
 - **Slice 2 — Home + RigPage OBD additions + weather line** — `useChompTelemetry` hook (+ pure `deriveChompTelemetry` to avoid double-polling). OBD entity IDs verified 2026-05-25 and added to `useHomeAssistant` allowlist: `chomp_fuel_level`, `chomp_engine_coolant_temperature`, `chomp_voltage_obd_adapter`, `chomp_distance_to_empty_estimated`, `chomp_trip_distance`, `chomp_ambient_air_temperature`, `chomp_engine_rpm`. `OnTripHome`: weather row (compact single-line using existing `WeatherIcon`), `FuelCard` (hidden when `!isOnline`, warn border at <20%), `EngineCard` (hidden when `!isOnline`, warn/critical state from coolant temp). Cards appear between broadcast row and LiveStat grid. `HomeAssistantCard` Climate sub-tab: Engine added as 5th zone (coolant + battery voltage + status dot + "More telemetry →" stub; hidden when `!isOnline`). `RigPage` Power tab: `JeepBatteryCard` above `EcoflowSection` (voltage + RPM + status dot; offline state shown when OBD not connected). Routing stays on `useTripPhase` (old 3-phase hook); `AppContext.tripPhase` (7-stage) is parallel/unused by Home for now.
 - **Slice 2b — Threat headline injection on Home** — `useDismissedThreats` hook (sessionStorage-backed Set; key `vela:dismissed-threats`). `ThreatHeadline` component (severity-colored card with dismiss X, icon+headline, detail prose, stub action buttons). `OnTripHome` wired: `headlineThreat` useMemo filters `surface.includes('home')`, excludes dismissed, sorts by priority desc, takes top 1. Snoozed pill shown above trip header when `dismissedIds.size > 0` — tap clears all dismissed and restores the headline. Severity/type vocabulary: `extreme/severe/moderate/minor` and `wildfire/weather_alert/air_quality/burn_ban` (canonical in `src/utils/deriveThreats.js`). Action buttons are console.log stubs — wiring deferred.
+- **Lint baseline cleanup** — 91 → 0 errors (65 warnings). Phase 1: tuned `eslint.config.js` to downgrade React 19 compiler noise to `warn` or `off` (`set-state-in-effect`, `purity`, `react-refresh/only-export-components`, `preserve-manual-memoization`). Added scoped `globals.node` for `*.config.{js,cjs,mjs}` (fixes `process` undef in `vite.config.js`). Phase 2: deleted dead code (`isPro`, `user`, `syncStatus`, `supabase`, `SectionLabel`, `IconLock`, `IconFlame`, `TripRow`, `BotAvatar` → module scope); hoisted `const` functions used before declaration in `useCrew`, `FleetPage`, `GearRegistryPage`, `VehicleDetail`; fixed `urlCacheRef` read-in-render in `TripPage` (state mirror `urlCache`); added `{ cause: err }` to `useTracks` throw; removed `initialLoadDone` ref from `GearRegistryPage` (init moved to `useEffect`).
 
 ---
 
@@ -301,14 +302,12 @@ Explicit decisions — **do not pick up without re-evaluating the tradeoff.**
 
 | Item | Reason deferred |
 |------|----------------|
-| Lint baseline cleanup | 91 problems (70 errors, 21 warnings) post Slice 2b — all pre-existing. React Compiler purity rules (`Date.now()` in render), `set-state-in-effect`, `no-unused-vars`, fast-refresh export co-mingling. Own session: triage by rule, decide which are real vs React 19 compiler noise that should be relaxed in eslint config. |
 | Push notifications for new threats | Out of scope for current PWA capabilities. Requires Service Worker push subscription + a backend sender. |
 | Future map data layers | Road closures, private land (PAD-US), smoke forecast (HRRR-Smoke), weather radar tiles. Each needs a data source evaluation before implementation. |
 | Background GPS tracking | iOS PWA can't do true background GPS. Decision: GPX import only. Future path: Capacitor wrapper if priority changes. |
 | ~~Starlink dish telemetry~~ | ~~UX cost of cloud cookie auth too high; no first-party consumer API.~~ **Shipped via HA — entity IDs may need updating (separate task).** |
 | Slate AX uplink detection | Security tradeoff of exposing router RPC unacceptable. |
 | ~~OBD-II via Veepeak BLE~~ | ~~No mature HA-native generic ELM327.~~ **Shipped via HA OBD integration — GPS entities flowing through `useGpsSource`.** |
-| `pendingSync.js` unused imports | `getPendingSaves` and `getPendingTrackSaves` imported but never referenced (`no-unused-vars`). One-line fix each; do alongside future pendingSync work. |
 | Unified IDB queue refactor | Five separate queues today (gear IDB flag, gear localStorage deletes, track IDB flag, track localStorage deletes, trip localStorage saves/deletes). Consolidate to a single typed operation queue in IDB. Own session. |
 | Residual hardcoded hex in RigPage live components | `SensorBatteriesSummary` uses `'#22c55e'` / `'#ef4444'`; `EcoflowCompactRow` uses `'#ef4444'`. Map to `var(--status-connected)` / `var(--status-offline)`. Phase 2d predated 2f; pick up in a future 2d.2. |
 | vela-admin Phase 2d–2h | No hex sweep, no lint pass, no dead code audit. 30-min mirror pass if admin surfaces to testers. |
@@ -368,6 +367,15 @@ Explicit decisions — **do not pick up without re-evaluating the tradeoff.**
   first. Both apps share the same Supabase project.
 - **Commit hygiene:** Run `git status` at the start of every session before any work.
   Multi-session gaps have repeatedly accumulated uncommitted drift.
+- **ESLint — React 19 compiler rules:** `eslint.config.js` intentionally relaxes several
+  `eslint-plugin-react-hooks` v5 rules to `warn` rather than `error`:
+  `set-state-in-effect` (25 intentional sync-state patterns), `purity` (10 `Date.now()`
+  freshness calculations in render), `react-refresh/only-export-components` (store/context
+  files co-export Provider + hooks by design), `preserve-manual-memoization` (`off`).
+  Don't introduce new instances that match these patterns — check existing usage first.
+  Rules kept at `error`: `immutability` (function accessed before declaration), 
+  `static-components` (component defined in render), `refs` (ref read in render body),
+  `no-unused-vars`, `no-undef`, `no-empty`, `preserve-caught-error`.
 
 ---
 

@@ -97,12 +97,6 @@ export default function MorePage({ onNavigate }) {
   )
 }
 
-function SectionLabel({ children }) {
-  return (
-    <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>{children}</p>
-  )
-}
-
 function Section({ label, children }) {
   const [open, setOpen] = useState(true)
   return (

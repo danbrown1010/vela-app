@@ -86,7 +86,7 @@ const ChevronRight = () => (
 
 // ─── Fleet Roster ──────────────────────────────────────────────────────────────
 
-function FleetRoster({ vehicles, loading, isPro, canAddVehicle, onAdd, onSelect, user }) {
+function FleetRoster({ vehicles, loading, canAddVehicle, onAdd, onSelect, user }) {
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', padding: 48 }}>
@@ -167,6 +167,12 @@ function FleetRoster({ vehicles, loading, isPro, canAddVehicle, onAdd, onSelect,
   )
 }
 
+const BotAvatar = () => (
+  <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--bg-card)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+    <VehicleIcon size={14} color="var(--accent)" />
+  </div>
+)
+
 // ─── Vehicle Setup Chat ────────────────────────────────────────────────────────
 
 function VehicleSetupChat({ onComplete, onCancel }) {
@@ -182,13 +188,6 @@ function VehicleSetupChat({ onComplete, onCancel }) {
 
   // Load API key first, then start chat once it's ready
   useEffect(() => { getAnthropicKey(user?.id).then(setApiKey) }, [user?.id])
-  useEffect(() => {
-    if (!apiKey || hasStarted.current) return
-    hasStarted.current = true
-    startChat(apiKey)
-  }, [apiKey])
-
-  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
 
   const callClaude = async (msgs, key, maxTokens = 500) => {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -222,6 +221,14 @@ function VehicleSetupChat({ onComplete, onCancel }) {
     }
   }
 
+  useEffect(() => {
+    if (!apiKey || hasStarted.current) return
+    hasStarted.current = true
+    startChat(apiKey)
+  }, [apiKey])
+
+  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
+
   const sendMessage = async () => {
     if (!input.trim() || loading || !apiKey) return
     const userMsg = { role: 'user', content: input.trim() }
@@ -247,18 +254,12 @@ function VehicleSetupChat({ onComplete, onCancel }) {
 
       const cleanReply = reply.replace(/<vehicle_profile>[\s\S]*?<\/vehicle_profile>/g, '').trim()
       setMessages(prev => [...prev, { role: 'assistant', content: cleanReply }])
-    } catch (err) {
+    } catch {
       setMessages(prev => [...prev, { role: 'assistant', content: 'Connection error. Try again.' }])
     } finally {
       setLoading(false)
     }
   }
-
-  const BotAvatar = () => (
-    <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--bg-card)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-      <VehicleIcon size={14} color="var(--accent)" />
-    </div>
-  )
 
   return (
     <div style={pageWrap}>
@@ -350,8 +351,6 @@ function VehicleDetail({ vehicle, onBack, onUpdate, onDelete, user }) {
   const [loadingMaint, setLoadingMaint] = useState(false)
   const photoInputRef               = useRef(null)
 
-  useEffect(() => { if (tab === 'maintenance') loadMaintenance() }, [tab])
-
   const loadMaintenance = async () => {
     setLoadingMaint(true)
     const [logRes, intRes] = await Promise.all([
@@ -362,6 +361,8 @@ function VehicleDetail({ vehicle, onBack, onUpdate, onDelete, user }) {
     setIntervals(intRes.data ?? [])
     setLoadingMaint(false)
   }
+
+  useEffect(() => { if (tab === 'maintenance') loadMaintenance() }, [tab])
 
   const handlePhotoUpload = async (e) => {
     const file = e.target.files?.[0]

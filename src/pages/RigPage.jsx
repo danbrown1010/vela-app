@@ -49,7 +49,7 @@ function RigPageContent() {
     setActiveIntegration(key)
   }
   const { power, comms, env } = useRigStatus()
-  const { accent, user, location, gpsStatus } = useAppStore()
+  const { accent, location, gpsStatus } = useAppStore()
 
   // ── Collapsing header ────────────────────────────────────────────────────────
   const scrollRef = useRef(null)

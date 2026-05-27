@@ -9,12 +9,6 @@ export function useCrew() {
   const [pendingInvites, setPendingInvites] = useState([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    if (!user) return
-    loadCrew()
-    loadPendingInvites()
-  }, [user])
-
   const loadCrew = async () => {
     try {
       const { data: pilotCrew, error: e1 } = await supabase
@@ -120,6 +114,12 @@ export function useCrew() {
       setPendingInviteCount(0)
     }
   }
+
+  useEffect(() => {
+    if (!user) return
+    loadCrew()
+    loadPendingInvites()
+  }, [user])
 
   const createCrew = async (name) => {
     const { data, error } = await supabase

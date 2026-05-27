@@ -43,24 +43,19 @@ export default function GearRegistryPage({ onBack }) {
     includeInChecklist: false,
   })
 
-  const initialLoadDone = useRef(false)
+  const loadItems = async () => {
+    const gear = await getGearItems()
+    setItems(gear)
+  }
 
   useEffect(() => {
+    setCollapsedCategories({})
     loadItems()
     // Retry after sync completes — catches the case where useSyncOnLogin
     // finishes populating IndexedDB after the initial mount render
     const timer = setTimeout(loadItems, 5000)
     return () => clearTimeout(timer)
   }, [])
-
-  const loadItems = async () => {
-    const gear = await getGearItems()
-    setItems(gear)
-    if (!initialLoadDone.current) {
-      initialLoadDone.current = true
-      setCollapsedCategories({})
-    }
-  }
 
   const handleSave = async () => {
     if (!form.name.trim()) return

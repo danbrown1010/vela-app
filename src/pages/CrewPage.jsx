@@ -19,7 +19,7 @@ const ROLE_LABELS = {
 }
 
 export default function CrewPage({ onBack }) {
-  const { user, profile, isPro } = useAppStore()
+  const { user, isPro } = useAppStore()
   const {
     crew, members, pendingInvites,
     loading, isPilot,

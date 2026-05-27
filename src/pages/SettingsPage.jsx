@@ -36,8 +36,6 @@ const FREQ_OPTIONS = [
 ]
 
 const STARLINK_PROXY = import.meta.env.VITE_STARLINK_PROXY || null
-const HA_URL         = import.meta.env.VITE_HA_URL         || null
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SettingsPage({ onBack, onNavigateTab, onClose, embedded = false, pendingSection, onConsumePendingSection }) {
@@ -209,7 +207,7 @@ export default function SettingsPage({ onBack, onNavigateTab, onClose, embedded 
                 <div style={{ marginLeft: -8 }}>
                   <UserAvatar profile={{ name: 'Emily' }} size={26} />
                 </div>
-                {pets.map((pet, i) => (
+                {pets.map((pet) => (
                   <div key={pet.id} style={{ marginLeft: -8 }}>
                     <PetAvatar pet={pet} size={26} />
                   </div>

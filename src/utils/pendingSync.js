@@ -1,7 +1,7 @@
 import { getGearDB } from './gearStorage'
 import { getTracksDB } from './trackStorage'
-import { getPendingDeletes, getPendingSaves } from './gearStorage'
-import { getPendingTrackDeletes, getPendingTrackSaves } from './trackStorage'
+import { getPendingDeletes } from './gearStorage'
+import { getPendingTrackDeletes } from './trackStorage'
 import { getPendingTripSaves, getPendingTripDeletes } from './tripStorage'
 
 const LAST_SYNC_KEY = 'vela-last-sync-time'

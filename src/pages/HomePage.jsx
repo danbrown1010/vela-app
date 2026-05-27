@@ -1,6 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
-import { supabase } from '../lib/supabase'
 import { useTripPhase } from '../hooks/useTripPhase'
 import { useTripDocs } from '../hooks/useTripDocs'
 import { useAppStore } from '../store/index'
@@ -126,7 +125,7 @@ function WeatherCard() {
 // ─── Idle home ────────────────────────────────────────────────────────────────
 
 function IdleHome({ onPlanTrip, onEditTrip, onNavigateToDocs }) {
-  const { accent, refreshHomeData, syncStatus, user, profile, trips, activeTrip, setActiveTripById, deactivateTrip, deleteTrip, publishTrip, unpublishTrip, tripLabels, location, gpsStatus } = useAppStore()
+  const { accent, refreshHomeData, user, profile, trips, activeTrip, setActiveTripById, deactivateTrip, deleteTrip, publishTrip, unpublishTrip, tripLabels, location, gpsStatus } = useAppStore()
   const firstName = getFirstName(profile, user)
   const gpsState = gpsStatus === 'locked' ? 'locked' : (gpsStatus === 'requesting' || gpsStatus === 'ip-based') ? 'searching' : 'off'
   const gpsAccuracyM = Math.round(location?.accuracy ?? 0)
@@ -538,7 +537,7 @@ function EngineCard({ engine }) {
   )
 }
 
-function OnTripHome({ activeTrip, dayOf, daysRemaining, totalDays, onNavigateToDocs }) {
+function OnTripHome({ activeTrip, dayOf, daysRemaining, totalDays }) {
   const { accent, deactivateTrip, publishTrip, unpublishTrip, ecoflowSoc, ecoflowCharging, user, weather, weatherLoading, threats } = useAppStore()
   const { isOnline, fuel, engine } = useChompTelemetry()
   const { dismissedIds, dismiss, clearDismissed } = useDismissedThreats()
@@ -1006,17 +1005,6 @@ function ActionRow({ label, sub, accent = null }) {
   )
 }
 
-function TripRow({ name, detail }) {
-  return (
-    <button className="w-full flex items-center justify-between px-4 py-3 text-left active:opacity-70 transition-opacity">
-      <div>
-        <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}>{name}</div>
-        <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{detail}</div>
-      </div>
-      <IconChevronRight style={{ width: 16, height: 16, color: 'var(--text-tertiary)', flexShrink: 0 }} />
-    </button>
-  )
-}
 
 const INTEL_COLORS = { safe: 'var(--safe)', warn: 'var(--warn)', danger: 'var(--danger)' }
 

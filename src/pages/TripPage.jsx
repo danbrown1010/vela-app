@@ -37,11 +37,11 @@ export default function TripPage() {
   const { fires } = useFireData()
   const { tracks, importTrack, removeTrack } = useTracks(user?.id, activeTrip?.id ?? null)
   const mapRef = useRef(null)
-  const hasFitTracksRef = useRef(false)
   const [layers,   setLayers]   = useState(() => Object.fromEntries(LAYER_CONFIG.map(l => [l.id, l.on])))
   const [expanded, setExpanded] = useState(false)
   const [previewDoc,    setPreviewDoc]    = useState(null)
   const urlCacheRef                       = useRef({})
+  const [urlCache,      setUrlCache]      = useState({})
   const [loadedDocIds,  setLoadedDocIds]  = useState(new Set())
   const [showImport,    setShowImport]    = useState(false)
   const [hiddenTracks,  setHiddenTracks]  = useState(new Set())
@@ -156,6 +156,7 @@ export default function TripPage() {
         user={user}
         setPreviewDoc={setPreviewDoc}
         urlCacheRef={urlCacheRef}
+        setUrlCache={setUrlCache}
         setLoadedDocIds={setLoadedDocIds}
         tracks={tracks}
         hiddenTracks={hiddenTracks}
@@ -208,9 +209,9 @@ export default function TripPage() {
             {previewDoc.file_path && (
               loadedDocIds.has(previewDoc.id) ? (
                 previewDoc.type === 'image' ? (
-                  <img src={urlCacheRef.current[previewDoc.id]} alt={previewDoc.title} style={{ width: '100%', borderRadius: 8, maxHeight: 260, objectFit: 'contain', marginBottom: 12 }} />
+                  <img src={urlCache[previewDoc.id]} alt={previewDoc.title} style={{ width: '100%', borderRadius: 8, maxHeight: 260, objectFit: 'contain', marginBottom: 12 }} />
                 ) : (
-                  <a href={urlCacheRef.current[previewDoc.id]} target="_blank" rel="noopener noreferrer"
+                  <a href={urlCache[previewDoc.id]} target="_blank" rel="noopener noreferrer"
                     style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--accent)', borderRadius: 8, padding: '10px 16px', fontSize: 13, color: '#fff', fontFamily: 'var(--font-body)', fontWeight: 500, textDecoration: 'none', marginBottom: 12 }}>
                     Open {previewDoc.file_name} →
                   </a>
@@ -369,7 +370,7 @@ function RecenterBtn({ onPress, accent }) {
 
 // ─── Bottom sheet ─────────────────────────────────────────────────────────────
 
-function BottomSheet({ expanded, onToggle, accent, activeTrip, user, setPreviewDoc, urlCacheRef, setLoadedDocIds, tracks = [], hiddenTracks, onToggleTrack, onDeleteTrack }) {
+function BottomSheet({ expanded, onToggle, accent, activeTrip, user, setPreviewDoc, urlCacheRef, setUrlCache, setLoadedDocIds, tracks = [], hiddenTracks, onToggleTrack, onDeleteTrack }) {
   const { docs, loading: docsLoading, getDocUrl } = useTripDocs(activeTrip?.id, user?.id)
   const [docsExpanded,   setDocsExpanded]   = useState(true)
   const [tracksExpanded, setTracksExpanded] = useState(true)
@@ -520,6 +521,7 @@ function BottomSheet({ expanded, onToggle, accent, activeTrip, user, setPreviewD
                           try {
                             const url = await getDocUrl(doc)
                             urlCacheRef.current[doc.id] = url
+                            setUrlCache(prev => ({ ...prev, [doc.id]: url }))
                             setLoadedDocIds(prev => new Set([...prev, doc.id]))
                           } catch (err) {
                             console.error('URL error:', err)

@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useMemo } from 'react'
-import { IconAlert, IconFlame } from '../components/icons'
+import { IconAlert } from '../components/icons'
 import { Skeleton } from '../components/Skeleton'
 import Map, { Source, Layer, Marker } from 'react-map-gl/maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'

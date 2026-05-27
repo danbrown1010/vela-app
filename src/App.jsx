@@ -40,7 +40,7 @@ const GloveBoxPage     = lazy(() => import('./pages/GloveBoxPage'))
 const FleetPage        = lazy(() => import('./pages/FleetPage'))
 
 function AppContent() {
-  const { user, profile, isPro, signInWithGoogle, signOut, loading: authLoading, notAllowed } = useAuth()
+  const { user, profile, signInWithGoogle, signOut, loading: authLoading, notAllowed } = useAuth()
 
   if (authLoading) {
     return (
