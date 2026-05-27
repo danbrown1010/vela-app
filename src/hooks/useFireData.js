@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 
 const NIFC_URL =
-  'https://services3.arcgis.com/T4QMspbfLg3qoC1P/arcgis/rest/services/WFIGS_Interagency_Perimeters_Current/FeatureServer/0/query?where=1%3D1&outFields=IncidentName,GISAcres,CreateDate&outSR=4326&f=geojson'
+  'https://services3.arcgis.com/T4QMspbfLg3qoC1P/arcgis/rest/services/WFIGS_Interagency_Perimeters_Current/FeatureServer/0/query?where=1%3D1&outFields=IncidentName,GISAcres,DailyAcres,PercentContained,CreateDate&outSR=4326&f=geojson'
 
 export function useFireData() {
   const [fires, setFires] = useState(null)
