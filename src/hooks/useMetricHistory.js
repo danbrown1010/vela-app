@@ -10,8 +10,8 @@ import { useEffect, useRef, useState } from 'react'
  * @returns { samples: Array<{ t: number, v: number }>, oldestT, newestT }
  */
 export function useMetricHistory(value, maxSamples = 60) {
-  const bufferRef = useRef([])
-  const [, setTick] = useState(0)
+  const lastEntryRef = useRef(null)  // only accessed inside effect — not during render
+  const [samples, setSamples] = useState([])
 
   useEffect(() => {
     if (value == null) return
@@ -19,14 +19,14 @@ export function useMetricHistory(value, maxSamples = 60) {
     if (!Number.isFinite(num)) return
 
     const t = Date.now()
-    const last = bufferRef.current[bufferRef.current.length - 1]
+    const last = lastEntryRef.current
     if (last && last.v === num && t - last.t < 1000) return
 
-    bufferRef.current = [...bufferRef.current, { t, v: num }].slice(-maxSamples)
-    setTick(x => x + 1)
+    const entry = { t, v: num }
+    lastEntryRef.current = entry
+    setSamples(prev => [...prev, entry].slice(-maxSamples))
   }, [value, maxSamples])
 
-  const samples = bufferRef.current
   return {
     samples,
     oldestT: samples[0]?.t ?? null,
