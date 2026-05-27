@@ -6,6 +6,7 @@ import { useAppStore } from '../store/index'
 import { useChompTelemetry } from '../hooks/useChompTelemetry'
 import { useDismissedThreats } from '../hooks/useDismissedThreats'
 import { ThreatHeadline } from '../components/ThreatHeadline'
+import { ThreatDetailSheet } from '../components/ThreatDetailSheet'
 import { getGearItems } from '../utils/gearStorage'
 import { Skeleton } from '../components/Skeleton'
 import { StatusBadge } from '../components/StatusBadge'
@@ -333,6 +334,7 @@ function PreTripHome({ activeTrip, daysUntil, onEditTrip }) {
   const { accent, weather, weatherLoading, aqi, deactivateTrip, publishTrip, unpublishTrip, threats } = useAppStore()
   const { dismissedIds, dismiss, clearDismissed } = useDismissedThreats()
   const [watchTrip, setWatchTrip] = useState(null)
+  const [openThreat, setOpenThreat] = useState(null)
   const [checked, setChecked] = useState([])
   const [gearChecklist, setGearChecklist] = useState([])
   const [gearChecked, setGearChecked] = useState(new Set())
@@ -371,13 +373,15 @@ function PreTripHome({ activeTrip, daysUntil, onEditTrip }) {
       {/* Snoozed alerts restore pill */}
       <SnoozedPill dismissedIds={dismissedIds} onRestore={clearDismissed} />
 
-      {/* Threat headline — top-priority home-surface threat, tap X to dismiss */}
+      {/* Threat headline — top-priority home-surface threat, tap X to dismiss, tap body to expand */}
       {headlineThreat && (
         <ThreatHeadline
           threat={headlineThreat}
           onDismiss={() => dismiss(headlineThreat.id)}
+          onOpenDetail={() => setOpenThreat(headlineThreat)}
         />
       )}
+      <ThreatDetailSheet threat={openThreat} onClose={() => setOpenThreat(null)} />
 
       <div style={{ paddingTop: 8 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -584,6 +588,7 @@ function OnTripHome({ activeTrip, dayOf, daysRemaining, totalDays }) {
   const { dismissedIds, dismiss, clearDismissed } = useDismissedThreats()
   const { docs: tripDocs, getDocUrl } = useTripDocs(activeTrip?.id, user?.id)
   const [watchTrip, setWatchTrip]     = useState(null)
+  const [openThreat, setOpenThreat]   = useState(null)
   const [previewDoc, setPreviewDoc]   = useState(null)
   const [previewUrl, setPreviewUrl]   = useState(null)
 
@@ -620,13 +625,15 @@ function OnTripHome({ activeTrip, dayOf, daysRemaining, totalDays }) {
         </div>
       </div>
 
-      {/* Threat headline — top-priority home-surface threat, tap X to dismiss */}
+      {/* Threat headline — top-priority home-surface threat, tap X to dismiss, tap body to expand */}
       {headlineThreat && (
         <ThreatHeadline
           threat={headlineThreat}
           onDismiss={() => dismiss(headlineThreat.id)}
+          onOpenDetail={() => setOpenThreat(headlineThreat)}
         />
       )}
+      <ThreatDetailSheet threat={openThreat} onClose={() => setOpenThreat(null)} />
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12, padding: '10px 14px' }}>
         <div style={{ fontSize: 13, color: activeTrip.is_published ? 'var(--safe)' : 'var(--text-tertiary)' }}>
