@@ -257,6 +257,12 @@ https://admin.vela-go.com/**
 
   **Commits:** `8aa9df5` → `753efc3` (8 commits across all Tier 3 work).
 
+- **Cabin card inner header removed** — the "ChompOS · CONNECTED" row inside `HomeAssistantCard` was redundant once the outer green outline was removed (earlier fix) and COS state was promoted to the app-wide `CollapsingHeader` indicator row (Paste 2). Sub-tabs (Climate · Lights · Media) now sit at the top of the card. The `IconCpu` system-stats button that lived in the old header was relocated to the footer (left side), keeping HA system health (CPU temp, disk) accessible without a dedicated header. Visual consistency restored across the three Rig content tabs (Power · Comms · Cabin).
+
+- **Engine zone removed from Cabin Climate** — the Tier 2 preview of coolant temp + battery voltage + "More telemetry →" stub has been fully migrated to the dedicated Engine tab. Cabin → Climate sub-tab now renders exactly 4 zones: Ursa Minor · Cabin · Outside · Refrigerator. Engine tab is the single source of truth for all OBD telemetry. `deriveChompTelemetry` import and `const chomp` removed from `HomeAssistantCard.jsx` (were only used by the now-deleted Engine zone).
+
+  **Commits:** `9d12213` (header removal), `7d1291c` (Engine zone removal).
+
 ---
 
 ## Shipped (2026-05-26)
