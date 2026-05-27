@@ -8,6 +8,17 @@ export const SEVERITY = {
   minor:    { border: 'var(--status-loading)', mix: 'var(--status-loading)', text: 'var(--status-loading)' },
 }
 
+// Hex mirror of SEVERITY for use in MapLibre paint expressions,
+// which cannot resolve CSS variables. Keep in sync with
+// --status-offline / --warn / --status-warning / --status-loading
+// in src/index.css
+export const SEVERITY_HEX = {
+  extreme:  '#ef4444',  // --status-offline
+  severe:   '#C4521A',  // --warn / --accent
+  moderate: '#eab308',  // --status-warning
+  minor:    '#94a3b8',  // --status-loading
+}
+
 const Btn = ({ label, focus, onAction }) => (
   <button
     onClick={() => {
