@@ -9,6 +9,8 @@ import { useTracks } from '../hooks/useTracks'
 import { ImportTrackSheet } from '../components/ImportTrackSheet'
 import { FireOverlay } from '../components/map/FireOverlay'
 import { AlertOverlay } from '../components/map/AlertOverlay'
+import { AqiOverlay } from '../components/map/AqiOverlay'
+import { PrecipOverlay } from '../components/map/PrecipOverlay'
 
 const MAP_STYLE   = 'https://tiles.openfreemap.org/styles/liberty'
 const CURRENT_POS = [-120.8830, 47.4521]
@@ -31,19 +33,23 @@ const LAYER_CONFIG = [
   { id: 'route',    label: 'Route',    on: true  },
   { id: 'fire',     label: 'Fires',    on: true  },
   { id: 'alerts',   label: 'Alerts',   on: true  },
+  { id: 'precip',   label: 'Precip',   on: false },
+  { id: 'aqi',      label: 'AQI',      on: true  },
   { id: 'land',     label: 'Land',     on: false },
   { id: 'partners', label: 'Partners', on: false },
 ]
 
 export default function TripPage() {
-  const { accent, location, activeTrip, trips, user, flags, weatherAlerts } = useAppStore()
+  const { accent, location, activeTrip, trips, user, flags, weatherAlerts, aqi } = useAppStore()
   const { fires } = useFireData()
   const { tracks, importTrack, removeTrack } = useTracks(user?.id, activeTrip?.id ?? null)
   const mapRef = useRef(null)
   const [layers,   setLayers]   = useState(() => {
     const base = Object.fromEntries(LAYER_CONFIG.map(l => [l.id, l.on]))
-    const stored = localStorage.getItem('vela-layer-alerts')
-    if (stored !== null) base.alerts = stored === 'true'
+    for (const id of ['alerts', 'precip', 'aqi']) {
+      const stored = localStorage.getItem(`vela-layer-${id}`)
+      if (stored !== null) base[id] = stored === 'true'
+    }
     return base
   })
   const [expanded, setExpanded] = useState(false)
@@ -56,7 +62,9 @@ export default function TripPage() {
 
   const toggleLayer = id => setLayers(prev => {
     const next = { ...prev, [id]: !prev[id] }
-    if (id === 'alerts') localStorage.setItem('vela-layer-alerts', String(next.alerts))
+    if (['alerts', 'precip', 'aqi'].includes(id)) {
+      localStorage.setItem(`vela-layer-${id}`, String(next[id]))
+    }
     return next
   })
   const toggleTrackVisibility = id => setHiddenTracks(prev => {
@@ -104,6 +112,10 @@ export default function TripPage() {
         interactiveLayerIds={['fire-fill', 'alert-fill']}
         onClick={handleMapClick}
       >
+        <PrecipOverlay
+          visible={layers.precip}
+          beforeId={layers.alerts ? 'alert-fill' : (fires?.features?.length ? 'fire-fill' : 'route-line')}
+        />
         <AlertOverlay
           alerts={weatherAlerts}
           visible={layers.alerts}
@@ -121,6 +133,8 @@ export default function TripPage() {
             />
           </Source>
         )}
+
+        <AqiOverlay aqi={aqi?.aqi ?? null} location={location} visible={layers.aqi} />
 
         {location && (
           <Marker longitude={location.lng} latitude={location.lat} anchor="center">
