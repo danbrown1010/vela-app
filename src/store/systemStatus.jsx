@@ -4,9 +4,10 @@ const SystemStatusContext = createContext(null)
 
 export function SystemStatusProvider({ children }) {
   const [status, setStatus] = useState({
-    power: 'loading',
-    comms: 'loading',
-    env:   'loading',
+    power:  'loading',
+    comms:  'loading',
+    env:    'loading',
+    engine: 'unconfigured',
   })
 
   const setSection = useCallback((section, val) => {

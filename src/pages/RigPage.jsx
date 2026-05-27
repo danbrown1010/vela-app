@@ -47,10 +47,11 @@ function RigPageContent() {
     ['ecoflow', 'starlink', 'home_assistant'].find(k => integrations[k]) ?? 'ecoflow'
   )
   const selectIntegration = (key) => {
-    if (!integrations[key]) toggleIntegration(key)
+    if (key !== 'engine' && !integrations[key]) toggleIntegration(key)
     setActiveIntegration(key)
   }
   const { power, comms, env } = useSystemStatus()
+  const engineStatus = useSystemStatus('engine')
   const { accent, location, gpsStatus } = useAppStore()
   const network = useNetworkStatus()
 
@@ -105,9 +106,10 @@ function RigPageContent() {
         >
           <div style={{ display: 'flex', gap: 8, overflowX: 'auto', scrollbarWidth: 'none' }}>
             {[
-              { key: 'ecoflow',        label: 'Power',          status: power },
-              { key: 'starlink',       label: 'Communications', status: comms },
-              { key: 'home_assistant', label: 'Environment',    status: env   },
+              { key: 'ecoflow',        label: 'Power',          status: power         },
+              { key: 'starlink',       label: 'Communications', status: comms         },
+              { key: 'home_assistant', label: 'Cabin',          status: env           },
+              { key: 'engine',         label: 'Engine',         status: engineStatus  },
             ].map(intg => (
               <StatusPill
                 key={intg.key}
@@ -133,6 +135,22 @@ function RigPageContent() {
           {activeIntegration === 'starlink' && <CommunicationsSection />}
           {activeIntegration === 'home_assistant' && (
             <HomeAssistantCard />
+          )}
+          {activeIntegration === 'engine' && (
+            <div style={{ padding: '0 0 8px' }}>
+              <div style={{
+                border: '0.5px dashed var(--border)',
+                borderRadius: 10,
+                padding: '24px 20px',
+                textAlign: 'center',
+                color: 'var(--text-tertiary)',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 12,
+                letterSpacing: '0.08em',
+              }}>
+                ENGINE TELEMETRY · COMING IN NEXT PASS
+              </div>
+            </div>
           )}
         </div>
       </div>
@@ -665,9 +683,9 @@ function SensorBatteriesSummary({ onTap }) {
   const allHealthy = low.length === 0 && online.length === total
 
   const dotColor = allHealthy
-    ? '#22c55e'
+    ? 'var(--status-connected)'
     : low.length > 0
-    ? '#ef4444'
+    ? 'var(--status-offline)'
     : 'var(--text-tertiary)'
 
   const summary = total === 0
