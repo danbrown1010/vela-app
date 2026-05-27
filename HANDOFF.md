@@ -229,6 +229,36 @@ https://admin.vela-go.com/**
 
 ---
 
+## Shipped (2026-05-27)
+
+- **Tier 3 Telemetry — Engine tab + header indicators**
+
+  **New files:**
+  - `src/store/systemStatus.jsx` — renamed from `rigStatus.jsx`; `{ power, comms, env, engine }` keys; `useSystemStatus(key?)`, `useSetSystemStatus()`. `rigStatus.jsx` kept as backward-compat shim.
+  - `src/hooks/useNetworkStatus.js` — NWS-freshness-proxied network state (`'connected'|'searching'|'off'`). STALE_MS = 20 min. `weatherUpdatedAt` from AppStore is the freshness signal (no direct NWS ping).
+  - `src/utils/systemStatus.js` — `envToCosState(envStatus)` maps 4-state env → 3-state COS dot.
+  - `src/hooks/useMetricHistory.js` — 60-sample ring buffer; samples in `useState` (not `useRef` — avoids `react-hooks/refs` error); 1s dedup window; returns `{ samples, oldestT, newestT }`.
+  - `src/components/telemetry/Sparkline.jsx` — fixed-viewBox SVG (W=600, `preserveAspectRatio="none"`); < 2 samples → dashed baseline; endpoint circle; optional `minValue`/`maxValue` for fixed y-axis scale.
+  - `src/components/telemetry/TimeAxis.jsx` — `JUST NOW / Xs AGO / Xm AGO` span label; `null` inputs → `—`.
+  - `src/components/telemetry/MetricCard.jsx` — composite card (status dot + 28px value + sublabel + status word + Sparkline + TimeAxis); `TONE_COLORS` map; `var(--border)` (not `--border-tertiary` which doesn't exist).
+  - `src/components/telemetry/CollapsibleSection.jsx` — slide animation (double-RAF open; `getBoundingClientRect()` flush before closing rAF); `localStorage` persistence keyed `vela-engine-section-{id}`; `initialRef` skips animation on first mount; collapsed state shows summary chip.
+  - `src/components/rig/engineMetricsConfig.js` — `METRIC_RANGES` (14 metrics), `toneFor(metric, value, ctx)`, `statusWordFor(metric, value, ctx)`; `ctx.rpm` needed for battery voltage running/idle threshold split.
+  - `src/components/rig/EngineTab.jsx` — 14 metrics, 4 `CollapsibleSection`s (ENGINE auto-open, FUEL, TRIP, GPS); 14 `useMetricHistory` calls; `useEffect` → `setSystemStatus('engine', ...)` on `isOnline`; offline banner; `UpdatedFooter` with `window.location.reload()` refresh; coming-soon footer.
+
+  **Modified files:**
+  - `src/components/CollapsingHeader.jsx` — GPS/COS/NET indicator row (right-justified, 7×7 dots, fades with scroll); `cos` + `net` props added.
+  - `src/components/HomeAssistantCard.jsx` — unconditional green outer border (`var(--safe)`) removed → `var(--border)`.
+  - `src/pages/RigPage.jsx` — `useRigStatus` → `useSystemStatus`; Engine tab added; `selectIntegration` skips `toggleIntegration` for `'engine'` key; stub replaced with `<EngineTab />`; `SensorBatteriesSummary` hex colors → CSS tokens.
+  - `src/pages/HomePage.jsx`, `SafetyPage.jsx`, `MorePage.jsx` — `cos` + `net` props wired to `CollapsingHeader`.
+  - `src/App.jsx` — `RigStatusProvider` → `SystemStatusProvider`.
+  - `src/components/HaProbeRunner.jsx`, `src/pages/CommunicationsSection.jsx` — `useSetRigStatus` → `useSetSystemStatus`.
+
+  **GPS source note:** GPS entities (`lat/lng/altitude/bearing/speed/accuracy/satellites`) are served by `useGpsSource` through `AppContext.location` — NOT through `useHomeAssistant`. EngineTab reads them from `useAppStore().location`. Unit conversions: `location.speed` (m/s) × 2.23694 = mph; `location.altitude` / `location.accuracy` (m) × 3.28084 = ft.
+
+  **Commits:** `8aa9df5` → `753efc3` (8 commits across all Tier 3 work).
+
+---
+
 ## Shipped (2026-05-26)
 
 - **Rig page three-state status pills** — Power / Comms / Environment chips with shared
@@ -347,7 +377,11 @@ Explicit decisions — **do not pick up without re-evaluating the tradeoff.**
 | Burn ban coverage outside WA | `useSafety` only fetches WA DNR burn bans. Oregon, Idaho, Montana burn bans unhandled. |
 | `deriveThreats` — SafetyPage consumer not yet built | Map overlay wired in Slice 3 (FireOverlay/AlertOverlay click → ThreatDetailSheet). SafetyPage still reads threats from its own hooks rather than AppContext. |
 | Pre-trip threat caching | For trip planning, `deriveThreats` should run against waypoints, not just current position. Cache GeoJSON in IDB per waypoint bbox. |
-| Tier 3 "More telemetry" bottom sheet | "More telemetry →" button stub exists on Engine zone in RigPage Env Climate sub-tab. Needs a 31-field layout component showing full OBD data (RPM, ambient temp, distance travelled, etc.). |
+| ~~Tier 3 "More telemetry" bottom sheet~~ | **Shipped as EngineTab.** Full OBD + GPS data now on the Engine tab of RigPage. |
+| Sparkline tooltips + zoom | Tapping a Sparkline could show a time-stamped value tooltip or expand to a larger graph sheet. Architecture is in place (samples array is accessible). |
+| Bulk `useMetricHistory` optimization | 14 separate `useMetricHistory` calls in EngineTab is accepted architecture. If memory becomes a concern at >60 samples, a single shared ring buffer with per-key storage would reduce state count. |
+| NET indicator upgrade | `useNetworkStatus` uses NWS `weatherUpdatedAt` as a freshness proxy — it's a heuristic, not a real connectivity check. Upgrade to a lightweight `/api/health` ping against the HA tunnel or a known reliable endpoint. |
+| `chomp_distance_travelled` odometer | `sensor.chomp_distance_travelled` is a candidate for total odometer → `vehicles.odometer` but entity ID was not confirmed in HA. Verify; if valid, wire into a background sync that updates `vehicles.odometer` on Supabase when value increases. |
 | ~~Threat headline injection on Home (Slice 2b)~~ | **Shipped.** See Slice 2b in Shipped section. |
 | ~~Wire ThreatHeadline action buttons~~ | **Shipped as Slice 2d.2.** See Shipped section. |
 | ~~Threat detail bottom sheet~~ | **Shipped as Slice 2d.1.** See Shipped section. |
@@ -419,6 +453,8 @@ If a future session's context mentions any of these, they are **wrong**:
 | `threat.surface` uses `home-headline`/`map-overlay`/`safety-page` | `deriveThreats` emits `home`/`map`/`safety`. |
 | `trip.status === 'pre-trip'` means user is in pre-trip phase | It means this trip is currently selected as `activeTrip`. Lifecycle phase is derived separately via `deriveTripPhase` / `AppContext.tripPhase`. |
 | File permissions arrive 644 after `create_file` | Occasionally restrictive. `chmod 644` after creation if `grep`/`cat` returns `zsh: permission denied`. |
+| "`useRigStatus` / `useSetRigStatus` / `RigStatusProvider`" | Renamed to `useSystemStatus` / `useSetSystemStatus` / `SystemStatusProvider` in `src/store/systemStatus.jsx`. Old names re-exported from `rigStatus.jsx` shim — don't introduce new usages of the old names. |
+| "`RigStatusContext` is scoped inside RigPage`" | It was hoisted to `AppShell` in the rigStatus cold-load flash fix. `SystemStatusContext` is app-wide, not page-scoped. |
 
 ---
 
@@ -473,6 +509,18 @@ login and sweeps `vela-pending-deletes`, `vela-pending-trip-deletes`, and
 `vela-pending-trip-saves` for any non-UUID IDs (mock or legacy). Matching entries are
 silently removed. A sunset TODO in the file marks it for removal after Dec 2026. Do not
 remove it before then.
+
+**CSS token drift — `--border-tertiary` does not exist.** The design system has `--border` only. Any spec or paste that references `var(--border-tertiary)` is wrong — use `var(--border)`. MetricCard and CollapsibleSection were updated accordingly; verify any future component pastes.
+
+**`useMetricHistory` dedup behavior** — consecutive identical values within 1 second are suppressed (OBD noise on unchanged readings). This means a sparkline that stays flat for a period will show fewer than 60 samples even if 60 ticks have passed. By design.
+
+**`CollapsibleSection` persistence is not cross-tab** — `localStorage` keyed `vela-engine-section-{id}` persists open/closed state between PWA sessions on the same device, but is not shared across browser tabs or devices. This is intentional.
+
+**COS indicator is presentation-only** — the COS dot in CollapsingHeader shows `envToCosState(env)` which maps HA connectivity (env system status) to the three-state COS dot. It does NOT independently verify HA entity values. If HA is "connected" but all sensors are stale, COS still shows "connected".
+
+**NET indicator is NWS-proxied** — `useNetworkStatus` does not ping the network directly. It uses `weatherUpdatedAt` from AppContext: fresh (<20 min) = `'connected'`, stale = `'searching'`, `navigator.onLine` false = `'off'`. A device with a good network but NWS weather fetch blocked will show `'searching'` incorrectly.
+
+**`react-hooks/refs` rule is set to `error`** — never read `ref.current` during the render body (return statement or JSX). Read it only inside `useEffect`/`useLayoutEffect`/event handlers. The `useMetricHistory` hook was specifically redesigned to use `useState` for `samples` (not `useRef`) to comply.
 
 **`haUrl` lives in `user_secrets.ha_url`** — plaintext, not encrypted (it's a URL, not a
 secret). The encrypted token is in `user_secrets.ha_token_encrypted`. Both are accessed
