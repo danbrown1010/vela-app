@@ -29,7 +29,8 @@ const ROUTE_GEOJSON = {
 
 const LAYER_CONFIG = [
   { id: 'route',    label: 'Route',    on: true  },
-  { id: 'fire',     label: 'Fire',     on: true  },
+  { id: 'fire',     label: 'Fires',    on: true  },
+  { id: 'alerts',   label: 'Alerts',   on: true  },
   { id: 'land',     label: 'Land',     on: false },
   { id: 'partners', label: 'Partners', on: false },
 ]
@@ -39,7 +40,12 @@ export default function TripPage() {
   const { fires } = useFireData()
   const { tracks, importTrack, removeTrack } = useTracks(user?.id, activeTrip?.id ?? null)
   const mapRef = useRef(null)
-  const [layers,   setLayers]   = useState(() => Object.fromEntries(LAYER_CONFIG.map(l => [l.id, l.on])))
+  const [layers,   setLayers]   = useState(() => {
+    const base = Object.fromEntries(LAYER_CONFIG.map(l => [l.id, l.on]))
+    const stored = localStorage.getItem('vela-layer-alerts')
+    if (stored !== null) base.alerts = stored === 'true'
+    return base
+  })
   const [expanded, setExpanded] = useState(false)
   const [previewDoc,    setPreviewDoc]    = useState(null)
   const urlCacheRef                       = useRef({})
@@ -48,7 +54,11 @@ export default function TripPage() {
   const [showImport,    setShowImport]    = useState(false)
   const [hiddenTracks,  setHiddenTracks]  = useState(new Set())
 
-  const toggleLayer = id => setLayers(prev => ({ ...prev, [id]: !prev[id] }))
+  const toggleLayer = id => setLayers(prev => {
+    const next = { ...prev, [id]: !prev[id] }
+    if (id === 'alerts') localStorage.setItem('vela-layer-alerts', String(next.alerts))
+    return next
+  })
   const toggleTrackVisibility = id => setHiddenTracks(prev => {
     const next = new Set(prev)
     next.has(id) ? next.delete(id) : next.add(id)
