@@ -142,45 +142,6 @@ export default function HomeAssistantCard() {
       borderRadius: 14,
       overflow: 'hidden',
     }}>
-      {/* Header */}
-      <div style={{
-        padding: '12px 14px',
-        borderBottom: '1px solid var(--border)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{
-            width: 8, height: 8, borderRadius: '50%',
-            background: 'var(--safe)',
-            animation: 'pulse 2s ease-in-out infinite',
-          }} />
-          <div style={{
-            fontSize: 13, fontWeight: 600,
-            color: 'var(--text-primary)', fontFamily: 'var(--font-body)',
-          }}>
-            ChompOS
-          </div>
-          <div style={{
-            fontSize: 10, fontFamily: 'var(--font-mono)',
-            color: 'var(--safe)', letterSpacing: '0.06em',
-          }}>
-            CONNECTED
-          </div>
-        </div>
-        <button
-          onClick={() => setSysOpen(true)}
-          aria-label="System stats"
-          style={{
-            width: 28, height: 28, borderRadius: 7,
-            border: '1px solid var(--border)', background: 'transparent',
-            color: 'var(--text-tertiary)', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}
-        >
-          <IconCpu style={{ width: 14, height: 14 }} />
-        </button>
-      </div>
-
       {/* Section tabs */}
       <div style={{
         display: 'flex',
@@ -617,10 +578,19 @@ export default function HomeAssistantCard() {
           padding: '6px 14px', borderTop: '1px solid var(--border)',
           fontSize: 10, fontFamily: 'var(--font-mono)',
           color: 'var(--text-tertiary)',
-          display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
-          <span>Updated {ha.lastUpdated.toLocaleTimeString()}</span>
-          <button onClick={ha.reload} aria-label="Refresh" style={footerRefreshStyle}>↺</button>
+          <button
+            onClick={() => setSysOpen(true)}
+            aria-label="System stats"
+            style={footerRefreshStyle}
+          >
+            <IconCpu style={{ width: 12, height: 12 }} />
+          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span>Updated {ha.lastUpdated.toLocaleTimeString()}</span>
+            <button onClick={ha.reload} aria-label="Refresh" style={footerRefreshStyle}>↺</button>
+          </div>
         </div>
       )}
 
