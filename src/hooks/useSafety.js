@@ -66,7 +66,6 @@ export function useSafety(lat, lng) {
     const poll = async () => {
       try {
         const bboxUrl = nifcBboxUrl(lat, lng)
-        console.log('[NIFC bbox url]', bboxUrl)
         const r = await fetch(bboxUrl, { signal: ctrl.signal })
         if (!r.ok) throw new Error(`NIFC ${r.status}`)
         const data = await r.json()
