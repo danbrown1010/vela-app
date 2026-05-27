@@ -158,7 +158,7 @@ export function ThreatDetailSheet({ threat, onClose }) {
 
           {/* Action buttons */}
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', paddingBottom: 16 }}>
-            <ActionButtons type={threat.type} severity={threat.severity} />
+            <ActionButtons type={threat.type} severity={threat.severity} onAction={onClose} />
           </div>
         </div>
       </div>

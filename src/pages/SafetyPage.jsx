@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useMemo } from 'react'
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react'
 import { IconAlert } from '../components/icons'
 import { Skeleton } from '../components/Skeleton'
 import Map, { Source, Layer, Marker } from 'react-map-gl/maplibre'
@@ -69,13 +69,23 @@ function usePullToRefresh(onRefresh) {
   return { scrollRef, pullY, onTouchStart, onTouchMove, onTouchEnd }
 }
 
-export default function SafetyPage() {
+export default function SafetyPage({ focus, onFocusConsumed }) {
   const { location, aqi, gpsStatus } = useAppStore()
   const gpsState = gpsStatus === 'locked' ? 'locked' : (gpsStatus === 'requesting' || gpsStatus === 'ip-based') ? 'searching' : 'off'
   const gpsAccuracyM = Math.round(location?.accuracy ?? 0)
   const { fires, loading: fireLoading, error: fireError, lastUpdated, refetch: refetchFires } = useFireData()
   const { alerts } = useFireWeather(location?.lat, location?.lng)
   const { scrollRef, pullY, onTouchStart, onTouchMove, onTouchEnd } = usePullToRefresh(refetchFires)
+
+  useEffect(() => {
+    if (!focus) return
+    const id = focus === 'fire-status' ? 'safety-fire-status' : 'safety-conditions'
+    const el = document.getElementById(id)
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      onFocusConsumed?.()
+    }
+  }, [focus, onFocusConsumed])
 
   const hasRedFlag   = alerts.some(a => a.properties.event === 'Red Flag Warning')
   const hasFireWatch = alerts.some(a => a.properties.event === 'Fire Weather Watch')
@@ -173,7 +183,7 @@ export default function SafetyPage() {
 function FireStatus({ nearest, loading, error, updatedStr }) {
   if (loading) {
     return (
-      <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div id="safety-fire-status" style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 6 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <Skeleton className="w-2 h-2 rounded-full" />
           <Skeleton className="h-3.5 rounded" style={{ width: 180 }} />
@@ -185,7 +195,7 @@ function FireStatus({ nearest, loading, error, updatedStr }) {
 
   if (nearest) {
     return (
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '12px 16px', borderLeft: '4px solid var(--danger)', background: 'rgba(139,46,46,0.07)' }}>
+      <div id="safety-fire-status" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '12px 16px', borderLeft: '4px solid var(--danger)', background: 'rgba(139,46,46,0.07)' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
           <div style={{ position: 'relative', marginTop: 6, flexShrink: 0 }}>
             <span style={{ display: 'block', width: 8, height: 8, borderRadius: '50%', background: '#ef4444' }} />
@@ -204,7 +214,7 @@ function FireStatus({ nearest, loading, error, updatedStr }) {
   }
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', borderLeft: '4px solid var(--safe)', background: 'rgba(74,124,63,0.06)' }}>
+    <div id="safety-fire-status" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', borderLeft: '4px solid var(--safe)', background: 'rgba(74,124,63,0.06)' }}>
       <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--safe)', flexShrink: 0 }} />
       <div>
         <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--safe)' }}>All clear · No fires within 100mi</p>
@@ -260,7 +270,7 @@ function Conditions({ burnBan, aqi, hasRedFlag, hasFireWatch, privateLand, escap
   const aqiLabel  = aqi ? `AQI ${aqi.aqi} · ${aqi.category.toUpperCase()}` : 'FETCHING'
 
   return (
-    <div>
+    <div id="safety-conditions">
       <SectionLabel>Conditions</SectionLabel>
       <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden' }}>
         <CondRow label="Fire weather" right={<StatusBadge status={fireWeatherStatus} label={fireWeatherLabel} />} />

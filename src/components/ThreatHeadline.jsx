@@ -8,11 +8,12 @@ export const SEVERITY = {
   minor:    { border: 'var(--status-loading)', mix: 'var(--status-loading)', text: 'var(--status-loading)' },
 }
 
-const stub = (action) => () => console.log('TODO:', action)
-
-const Btn = ({ label, action }) => (
+const Btn = ({ label, focus, onAction }) => (
   <button
-    onClick={stub(action)}
+    onClick={() => {
+      onAction?.()
+      window.dispatchEvent(new CustomEvent('vela:navigate-safety', { detail: { focus } }))
+    }}
     style={{
       padding: '6px 12px', borderRadius: 8,
       border: '1px solid var(--border)',
@@ -35,18 +36,10 @@ export function ThreatIcon({ type }) {
   return <IconCloudRain style={sz} />
 }
 
-export function ActionButtons({ type, severity }) {
-  if (type === 'wildfire') return (
-    <>
-      <Btn label="View on map"   action="view-on-map"   />
-      <Btn label="Escape routes" action="escape-routes" />
-    </>
-  )
-  if (type === 'weather_alert' && (severity === 'severe' || severity === 'extreme')) return (
-    <Btn label="Pre-storm checklist" action="pre-storm-checklist" />
-  )
-  if (type === 'air_quality') return <Btn label="Outdoor advice"   action="outdoor-advice"   />
-  if (type === 'burn_ban')    return <Btn label="Burn ban details" action="burn-ban-details" />
+export function ActionButtons({ type, onAction }) {
+  if (type === 'wildfire')    return <Btn label="View on Safety" focus="fire-status" onAction={onAction} />
+  if (type === 'air_quality') return <Btn label="View on Safety" focus="conditions"  onAction={onAction} />
+  if (type === 'burn_ban')    return <Btn label="View on Safety" focus="conditions"  onAction={onAction} />
   return null
 }
 

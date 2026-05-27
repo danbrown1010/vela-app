@@ -170,6 +170,7 @@ function AppShell({ user }) {
   const [showSettings,          setShowSettings]          = useState(false)
   const [closingSettings,       setClosingSettings]       = useState(false)
   const [pendingSettingsSection, setPendingSettingsSection] = useState(null)
+  const [safetyFocus,           setSafetyFocus]           = useState(null)
 
   const closeSettings = () => {
     setClosingSettings(true)
@@ -195,6 +196,16 @@ function AppShell({ user }) {
     }
     window.addEventListener('vela:open-settings', handler)
     return () => window.removeEventListener('vela:open-settings', handler)
+  }, [])
+
+  // Handle vela:navigate-safety — fired by ThreatHeadline ActionButtons
+  useEffect(() => {
+    const handler = (e) => {
+      setActiveTab('safety')
+      setSafetyFocus(e.detail?.focus ?? null)
+    }
+    window.addEventListener('vela:navigate-safety', handler)
+    return () => window.removeEventListener('vela:navigate-safety', handler)
   }, [])
 
   // Handle vela:open-sync-panel deep-link from SettingsPage
@@ -254,7 +265,7 @@ function AppShell({ user }) {
           <div key={activeTab + (moreSubview ?? '')} className="page-enter" style={{ flex: 1, overflow: 'hidden', minHeight: 0 }}>
             {activeTab === 'home'   && <HomePage onPlanTrip={openCreate} onEditTrip={openEdit} onNavigateToDocs={() => { setActiveTab('more'); setMoreSubview('glove-box') }} />}
             {activeTab === 'trip'   && <TripPage />}
-            {activeTab === 'safety' && <SafetyPage />}
+            {activeTab === 'safety' && <SafetyPage focus={safetyFocus} onFocusConsumed={() => setSafetyFocus(null)} />}
             {activeTab === 'rig'    && <RigPage />}
             {activeTab === 'pets'   && <PetsPage />}
             {activeTab === 'more'   && moreSubview === null        && <MorePage          onNavigate={setMoreSubview} />}
