@@ -8,6 +8,7 @@ import { useTripDocs } from '../hooks/useTripDocs'
 import { useTracks } from '../hooks/useTracks'
 import { ImportTrackSheet } from '../components/ImportTrackSheet'
 import { FireOverlay } from '../components/map/FireOverlay'
+import { AlertOverlay } from '../components/map/AlertOverlay'
 
 const MAP_STYLE   = 'https://tiles.openfreemap.org/styles/liberty'
 const CURRENT_POS = [-120.8830, 47.4521]
@@ -34,7 +35,7 @@ const LAYER_CONFIG = [
 ]
 
 export default function TripPage() {
-  const { accent, location, activeTrip, trips, user, flags } = useAppStore()
+  const { accent, location, activeTrip, trips, user, flags, weatherAlerts } = useAppStore()
   const { fires } = useFireData()
   const { tracks, importTrack, removeTrack } = useTracks(user?.id, activeTrip?.id ?? null)
   const mapRef = useRef(null)
@@ -93,6 +94,11 @@ export default function TripPage() {
         interactiveLayerIds={['fire-fill', 'alert-fill']}
         onClick={handleMapClick}
       >
+        <AlertOverlay
+          alerts={weatherAlerts}
+          visible={layers.alerts}
+          beforeId={fires?.features?.length ? 'fire-fill' : 'route-line'}
+        />
         <FireOverlay fires={fires} visible={layers.fire} beforeId="route-line" />
 
         {layers.route && (
