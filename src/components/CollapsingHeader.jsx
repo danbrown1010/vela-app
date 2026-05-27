@@ -26,6 +26,23 @@ const lerp = (a, b, t) => a + (b - a) * t
  *   children    — optional content to render below the header (e.g. tab chips).
  *                 Stays inside the sticky region; padding compacts with scroll.
  */
+function indicatorColor(state) {
+  if (state === 'connected' || state === 'locked') return 'var(--status-connected)'
+  if (state === 'searching') return 'var(--status-warning)'
+  return 'var(--text-tertiary)'
+}
+
+function indicatorLabel(kind, state, accuracyM) {
+  if (kind === 'GPS') {
+    if (state === 'locked' || state === 'connected') return `GPS LOCKED · ±${accuracyM ?? '—'}m`
+    if (state === 'searching') return 'GPS SEARCHING'
+    return 'GPS OFF'
+  }
+  if (state === 'connected') return `${kind} ONLINE`
+  if (state === 'searching') return `${kind} SEARCHING`
+  return `${kind} OFF`
+}
+
 export function CollapsingHeader({
   image,
   title,
@@ -34,6 +51,8 @@ export function CollapsingHeader({
   inlineSubtitle = false,
   badge,
   gps,
+  cos,
+  net,
   onOpenSettings,
   scrollProgress: scrollProgressProp,
   children,
@@ -81,18 +100,10 @@ export function CollapsingHeader({
   const inlineGpsOpacity = scrollProgress > 0.6 ? (scrollProgress - 0.6) / 0.4 : 0
   const headerPaddingY   = lerp(16, 8, scrollProgress)
 
-  const gpsDotColor =
-    gps?.state === 'locked'    ? 'var(--status-connected)' :
-    gps?.state === 'searching' ? 'var(--status-warning)' :
-                                  'var(--text-tertiary)'
-
-  const gpsLabel =
-    gps?.state === 'locked'    ? `GPS LOCKED · ±${gps.accuracyM ?? '—'}m` :
-    gps?.state === 'searching' ? 'GPS SEARCHING' :
-                                  'GPS OFF'
-
+  const gpsDotColor    = indicatorColor(gps?.state)
+  const gpsLabel       = indicatorLabel('GPS', gps?.state, gps?.accuracyM)
   const gpsInlineLabel =
-    gps?.state === 'locked'    ? `GPS · ±${gps.accuracyM ?? '—'}m` :
+    gps?.state === 'locked' || gps?.state === 'connected' ? `GPS · ±${gps.accuracyM ?? '—'}m` :
     gps?.state === 'searching' ? 'GPS …' :
                                   'GPS —'
 
@@ -296,8 +307,8 @@ export function CollapsingHeader({
         )}
       </div>
 
-      {/* GPS line */}
-      {gps && (
+      {/* Status indicator row — GPS · COS · NET, right-justified */}
+      {(gps || cos || net) && (
         <div style={{
           padding: '0 16px',
           height: lerp(20, 0, scrollProgress),
@@ -305,16 +316,38 @@ export function CollapsingHeader({
           overflow: 'hidden',
         }}>
           <div style={{
-            fontSize: 11, fontFamily: 'var(--font-mono)',
-            color: 'var(--text-secondary)',
-            letterSpacing: '0.08em',
-            display: 'flex', alignItems: 'center', gap: 6,
+            display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 16,
           }}>
-            <span style={{
-              width: 7, height: 7, borderRadius: '50%',
-              background: gpsDotColor,
-            }} />
-            {gpsLabel}
+            {gps && (
+              <div style={{
+                fontSize: 11, fontFamily: 'var(--font-mono)',
+                color: 'var(--text-secondary)', letterSpacing: '0.08em',
+                display: 'flex', alignItems: 'center', gap: 6,
+              }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: gpsDotColor }} />
+                {gpsLabel}
+              </div>
+            )}
+            {cos && (
+              <div style={{
+                fontSize: 11, fontFamily: 'var(--font-mono)',
+                color: 'var(--text-secondary)', letterSpacing: '0.08em',
+                display: 'flex', alignItems: 'center', gap: 6,
+              }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: indicatorColor(cos.state) }} />
+                {indicatorLabel('COS', cos.state)}
+              </div>
+            )}
+            {net && (
+              <div style={{
+                fontSize: 11, fontFamily: 'var(--font-mono)',
+                color: 'var(--text-secondary)', letterSpacing: '0.08em',
+                display: 'flex', alignItems: 'center', gap: 6,
+              }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: indicatorColor(net.state) }} />
+                {indicatorLabel('NET', net.state)}
+              </div>
+            )}
           </div>
         </div>
       )}
