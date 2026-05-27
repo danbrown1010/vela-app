@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useHomeAssistant } from '../hooks/useHomeAssistant'
-import { deriveChompTelemetry } from '../hooks/useChompTelemetry'
 import { IconThermometer, IconLightbulb, IconRadio, IconMoon, IconCpu } from './icons'
 import { useSetSystemStatus } from '../store/systemStatus'
 
@@ -8,8 +7,7 @@ const HA_FRESHNESS_MS = 45000
 
 export default function HomeAssistantCard() {
   const ha = useHomeAssistant()
-  const chomp = deriveChompTelemetry(ha)
-  const [activeSection, setActiveSection] = useState('climate')
+const [activeSection, setActiveSection] = useState('climate')
   const [sysOpen, setSysOpen] = useState(false)
   const setRigStatus = useSetSystemStatus()
 
@@ -284,70 +282,6 @@ export default function HomeAssistantCard() {
               )
             }).filter(Boolean)}
 
-            {/* ── ENGINE ZONE (5th) — hidden when OBD offline ── */}
-            {chomp.isOnline && chomp.engine && (() => {
-              const { coolantF, batteryV, status } = chomp.engine
-              const dotColor = status === 'critical' ? 'var(--status-offline)'
-                : status === 'warning' ? 'var(--status-warning)'
-                : 'var(--status-connected)'
-              const borderColor = (status === 'critical' || status === 'warning')
-                ? `color-mix(in srgb, var(--status-warning) 40%, transparent)`
-                : 'var(--border)'
-              return (
-                <div style={{
-                  background: 'var(--bg-secondary)',
-                  border: `1px solid ${borderColor}`,
-                  borderRadius: 10, padding: '10px 12px',
-                }}>
-                  <div style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    marginBottom: 6,
-                  }}>
-                    <div style={{
-                      fontSize: 11, fontFamily: 'var(--font-mono)',
-                      color: 'var(--text-tertiary)', textTransform: 'uppercase',
-                      letterSpacing: '0.06em',
-                      display: 'flex', alignItems: 'center', gap: 6,
-                    }}>
-                      Engine
-                      <div style={{ width: 5, height: 5, borderRadius: '50%', background: dotColor }} />
-                    </div>
-                    <button
-                      style={{
-                        fontSize: 10, fontFamily: 'var(--font-mono)',
-                        color: 'var(--text-tertiary)',
-                        background: 'transparent', border: 'none',
-                        cursor: 'default', padding: 0,
-                        letterSpacing: '0.04em',
-                      }}
-                    >
-                      More telemetry →
-                    </button>
-                  </div>
-                  <div style={{ display: 'flex', gap: 16 }}>
-                    <div>
-                      <div style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)', marginBottom: 2 }}>Coolant</div>
-                      <div style={{
-                        fontSize: 18, fontWeight: 700, lineHeight: 1,
-                        color: status === 'normal' ? 'var(--text-primary)' : 'var(--status-warning)',
-                        fontFamily: 'var(--font-body)',
-                      }}>
-                        {coolantF != null ? `${Math.round(coolantF)}°F` : '—'}
-                      </div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)', marginBottom: 2 }}>Battery</div>
-                      <div style={{
-                        fontSize: 18, fontWeight: 700, lineHeight: 1,
-                        color: 'var(--text-primary)', fontFamily: 'var(--font-body)',
-                      }}>
-                        {batteryV != null ? `${batteryV.toFixed(1)} V` : '—'}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )
-            })()}
           </div>
         )}
 
