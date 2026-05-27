@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useCallback } from 'react'
 import { IconChevronRight, IconUpload } from '../components/icons'
 import Map, { Source, Layer, Marker } from 'react-map-gl/maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -7,6 +7,7 @@ import { useFireData } from '../hooks/useFireData'
 import { useTripDocs } from '../hooks/useTripDocs'
 import { useTracks } from '../hooks/useTracks'
 import { ImportTrackSheet } from '../components/ImportTrackSheet'
+import { FireOverlay } from '../components/map/FireOverlay'
 
 const MAP_STYLE   = 'https://tiles.openfreemap.org/styles/liberty'
 const CURRENT_POS = [-120.8830, 47.4521]
@@ -53,6 +54,20 @@ export default function TripPage() {
     return next
   })
 
+  const handleMapClick = useCallback((e) => {
+    const feature = e.features?.[0]
+    if (!feature) return
+    if (feature.layer.id === 'fire-fill') {
+      window.dispatchEvent(new CustomEvent('vela:map-feature-click', {
+        detail: { kind: 'fire', feature },
+      }))
+    } else if (feature.layer.id === 'alert-fill') {
+      window.dispatchEvent(new CustomEvent('vela:map-feature-click', {
+        detail: { kind: 'alert', feature },
+      }))
+    }
+  }, [])
+
   const recenter = () => {
     if (location && mapRef.current) {
       mapRef.current.flyTo({ center: [location.lng, location.lat], zoom: 14, duration: 1000 })
@@ -75,13 +90,10 @@ export default function TripPage() {
         }}
         style={{ width: '100%', height: '100%' }}
         attributionControl={false}
+        interactiveLayerIds={['fire-fill', 'alert-fill']}
+        onClick={handleMapClick}
       >
-        {fires && layers.fire && (
-          <Source id="fires" type="geojson" data={fires}>
-            <Layer id="fire-fill"    type="fill" paint={{ 'fill-color': '#C4521A', 'fill-opacity': 0.15 }} />
-            <Layer id="fire-outline" type="line" paint={{ 'line-color': '#C4521A', 'line-width': 1.5, 'line-opacity': 0.8 }} />
-          </Source>
-        )}
+        <FireOverlay fires={fires} visible={layers.fire} beforeId="route-line" />
 
         {layers.route && (
           <Source id="route" type="geojson" data={ROUTE_GEOJSON}>
