@@ -11,6 +11,9 @@ import { FireOverlay } from '../components/map/FireOverlay'
 import { AlertOverlay } from '../components/map/AlertOverlay'
 import { AqiOverlay } from '../components/map/AqiOverlay'
 import { PrecipOverlay } from '../components/map/PrecipOverlay'
+import { MapFeaturePopup } from '../components/map/MapFeaturePopup'
+import { ThreatDetailSheet } from '../components/ThreatDetailSheet'
+import { findThreatForMapFeature } from '../utils/findThreatForMapFeature'
 
 const MAP_STYLE   = 'https://tiles.openfreemap.org/styles/liberty'
 const CURRENT_POS = [-120.8830, 47.4521]
@@ -40,7 +43,7 @@ const LAYER_CONFIG = [
 ]
 
 export default function TripPage() {
-  const { accent, location, activeTrip, trips, user, flags, weatherAlerts, aqi } = useAppStore()
+  const { accent, location, activeTrip, trips, user, flags, weatherAlerts, aqi, threats } = useAppStore()
   const { fires } = useFireData()
   const { tracks, importTrack, removeTrack } = useTracks(user?.id, activeTrip?.id ?? null)
   const mapRef = useRef(null)
@@ -59,6 +62,8 @@ export default function TripPage() {
   const [loadedDocIds,  setLoadedDocIds]  = useState(new Set())
   const [showImport,    setShowImport]    = useState(false)
   const [hiddenTracks,  setHiddenTracks]  = useState(new Set())
+  const [openThreat,    setOpenThreat]    = useState(null)
+  const [popupFeature,  setPopupFeature]  = useState(null)
 
   const toggleLayer = id => setLayers(prev => {
     const next = { ...prev, [id]: !prev[id] }
@@ -74,18 +79,22 @@ export default function TripPage() {
   })
 
   const handleMapClick = useCallback((e) => {
-    const feature = e.features?.[0]
-    if (!feature) return
-    if (feature.layer.id === 'fire-fill') {
-      window.dispatchEvent(new CustomEvent('vela:map-feature-click', {
-        detail: { kind: 'fire', feature },
-      }))
-    } else if (feature.layer.id === 'alert-fill') {
-      window.dispatchEvent(new CustomEvent('vela:map-feature-click', {
-        detail: { kind: 'alert', feature },
-      }))
+    const hit = e.features?.[0]
+    if (!hit) return
+    const kind = hit.layer.id === 'fire-fill'  ? 'fire'
+               : hit.layer.id === 'alert-fill' ? 'alert'
+               : null
+    if (!kind) return
+
+    const threat = findThreatForMapFeature({ kind, feature: hit, threats })
+    if (threat) {
+      setOpenThreat(threat)
+      setPopupFeature(null)
+    } else {
+      setPopupFeature({ kind, feature: hit })
+      setOpenThreat(null)
     }
-  }, [])
+  }, [threats])
 
   const recenter = () => {
     if (location && mapRef.current) {
@@ -164,6 +173,14 @@ export default function TripPage() {
             />
           </Source>
         ))}
+
+        {popupFeature && (
+          <MapFeaturePopup
+            feature={popupFeature.feature}
+            kind={popupFeature.kind}
+            onClose={() => setPopupFeature(null)}
+          />
+        )}
       </Map>
 
       {/* ── Floating UI ──────────────────────────────────────────────────────── */}
@@ -278,6 +295,8 @@ export default function TripPage() {
           </div>
         </div>
       )}
+
+      <ThreatDetailSheet threat={openThreat} onClose={() => setOpenThreat(null)} />
     </div>
   )
 }
