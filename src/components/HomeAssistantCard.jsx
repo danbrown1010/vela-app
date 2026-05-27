@@ -138,7 +138,7 @@ export default function HomeAssistantCard() {
   return (
     <div style={{
       background: 'var(--bg-card)',
-      border: '1px solid var(--safe)',
+      border: '1px solid var(--border)',
       borderRadius: 14,
       overflow: 'hidden',
     }}>
