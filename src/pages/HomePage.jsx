@@ -330,7 +330,8 @@ const PRE_TRIP_CHECKLIST = [
 ]
 
 function PreTripHome({ activeTrip, daysUntil, onEditTrip }) {
-  const { accent, weather, aqi, deactivateTrip, publishTrip, unpublishTrip } = useAppStore()
+  const { accent, weather, weatherLoading, aqi, deactivateTrip, publishTrip, unpublishTrip, threats } = useAppStore()
+  const { dismissedIds, dismiss, clearDismissed } = useDismissedThreats()
   const [watchTrip, setWatchTrip] = useState(null)
   const [checked, setChecked] = useState([])
   const [gearChecklist, setGearChecklist] = useState([])
@@ -346,6 +347,13 @@ function PreTripHome({ activeTrip, daysUntil, onEditTrip }) {
     })
   }, [])
 
+  const headlineThreat = useMemo(() =>
+    threats
+      .filter(t => t.surface?.includes('home'))
+      .filter(t => !dismissedIds.has(t.id))
+      .sort((a, b) => b.priority - a.priority)[0] ?? null
+  , [threats, dismissedIds])
+
   const toggle = (item) => setChecked(p => p.includes(item) ? p.filter(x => x !== item) : [...p, item])
   const toggleGear = (id) => setGearChecked(prev => {
     const next = new Set(prev)
@@ -359,6 +367,18 @@ function PreTripHome({ activeTrip, daysUntil, onEditTrip }) {
 
   return (
     <div className="overflow-y-auto" style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', padding: 16, gap: 16, paddingBottom: 'calc(24px + env(safe-area-inset-bottom))' }}>
+
+      {/* Snoozed alerts restore pill */}
+      <SnoozedPill dismissedIds={dismissedIds} onRestore={clearDismissed} />
+
+      {/* Threat headline — top-priority home-surface threat, tap X to dismiss */}
+      {headlineThreat && (
+        <ThreatHeadline
+          threat={headlineThreat}
+          onDismiss={() => dismiss(headlineThreat.id)}
+        />
+      )}
+
       <div style={{ paddingTop: 8 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
@@ -410,6 +430,28 @@ function PreTripHome({ activeTrip, daysUntil, onEditTrip }) {
 
       {watchTrip && <CrewWatchModal trip={watchTrip} onClose={() => setWatchTrip(null)} />}
 
+      {/* Weather row */}
+      {weather && !weatherLoading && (
+        <div style={{
+          background: 'var(--bg-card)', border: '1px solid var(--border)',
+          borderRadius: 12, padding: '10px 14px',
+          display: 'flex', alignItems: 'center', gap: 8,
+        }}>
+          <WeatherIcon description={weather.shortForecast} size={16} color="var(--text-secondary)" />
+          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'var(--font-body)' }}>
+            {weather.temperature}°F
+          </div>
+          <div style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {weather.shortForecast}
+          </div>
+          {weather.windSpeed && (
+            <div style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)', flexShrink: 0 }}>
+              {weather.windSpeed} {weather.windDirection}
+            </div>
+          )}
+        </div>
+      )}
+
       <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <p style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 14 }}>Packing readiness</p>
@@ -435,7 +477,6 @@ function PreTripHome({ activeTrip, daysUntil, onEditTrip }) {
       </div>
 
       <Section title="Pre-trip intel">
-        <IntelRow label="Weather" value={weather ? `${weather.shortForecast}, ${weather.temperature}°${weather.temperatureUnit}` : 'Loading…'} color="neutral" />
         <IntelRow label="AQI"     value={aqi ? `${aqi.aqi} · ${aqi.category}` : 'Loading…'} color={aqi ? (aqi.aqi < 50 ? 'safe' : aqi.aqi <= 100 ? 'warn' : 'danger') : 'neutral'} />
         <IntelRow label="Road status" value="FS-9712 open"        color="safe" />
         <IntelRow label="Burn ban"    value="No restriction"      color="safe" />
@@ -558,24 +599,7 @@ function OnTripHome({ activeTrip, dayOf, daysRemaining, totalDays }) {
     <div className="overflow-y-auto" style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', padding: 16, gap: 16, paddingBottom: 'calc(24px + env(safe-area-inset-bottom))' }}>
 
       {/* Snoozed alerts restore pill */}
-      {dismissedIds.size > 0 && (
-        <button
-          onClick={clearDismissed}
-          style={{
-            alignSelf: 'flex-start',
-            fontSize: 11, fontFamily: 'var(--font-mono)',
-            color: 'var(--text-tertiary)',
-            background: 'var(--bg-secondary)',
-            border: '1px solid var(--border)',
-            borderRadius: 20, padding: '3px 10px',
-            cursor: 'pointer', letterSpacing: '0.04em',
-            marginBottom: -8,
-          }}
-          className="active:opacity-70 transition-opacity"
-        >
-          {dismissedIds.size} alert{dismissedIds.size === 1 ? '' : 's'} hidden · tap to restore
-        </button>
-      )}
+      <SnoozedPill dismissedIds={dismissedIds} onRestore={clearDismissed} />
 
       <div style={{ paddingTop: 8, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <div>
@@ -815,7 +839,7 @@ const POST_TRIP_TASKS = [
 
 function PostTripHome({ activeTrip, totalDays }) {
   const [checked, setChecked] = useState([])
-  const { accent, deactivateTrip } = useAppStore()
+  const { accent, deactivateTrip, weather, weatherLoading } = useAppStore()
   const toggle = (item) => setChecked(p => p.includes(item) ? p.filter(x => x !== item) : [...p, item])
   const done = checked.length === POST_TRIP_TASKS.length
 
@@ -842,6 +866,27 @@ function PostTripHome({ activeTrip, totalDays }) {
         <StatCard label="Miles" value="218" valueColor={accent} />
         <StatCard label="Shots" value="340" valueColor="#a78bfa" />
       </div>
+
+      {weather && !weatherLoading && (
+        <div style={{
+          background: 'var(--bg-card)', border: '1px solid var(--border)',
+          borderRadius: 12, padding: '10px 14px',
+          display: 'flex', alignItems: 'center', gap: 8,
+        }}>
+          <WeatherIcon description={weather.shortForecast} size={16} color="var(--text-secondary)" />
+          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'var(--font-body)' }}>
+            {weather.temperature}°F
+          </div>
+          <div style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'var(--font-body)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {weather.shortForecast}
+          </div>
+          {weather.windSpeed && (
+            <div style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)', flexShrink: 0 }}>
+              {weather.windSpeed} {weather.windDirection}
+            </div>
+          )}
+        </div>
+      )}
 
       <button style={{ width: '100%', background: '#7c3aed', color: '#fff', fontWeight: 700, fontSize: 14, borderRadius: 16, padding: '14px 0', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
         Build highlight reel →
@@ -1029,6 +1074,28 @@ function CheckItem({ label, checked, onToggle, accent }) {
       <span style={{ fontSize: 14, color: checked ? 'var(--text-tertiary)' : 'var(--text-primary)', textDecoration: checked ? 'line-through' : 'none', transition: 'color 0.15s' }}>
         {label}
       </span>
+    </button>
+  )
+}
+
+function SnoozedPill({ dismissedIds, onRestore }) {
+  if (dismissedIds.size === 0) return null
+  return (
+    <button
+      onClick={onRestore}
+      style={{
+        alignSelf: 'flex-start',
+        fontSize: 11, fontFamily: 'var(--font-mono)',
+        color: 'var(--text-tertiary)',
+        background: 'var(--bg-secondary)',
+        border: '1px solid var(--border)',
+        borderRadius: 20, padding: '3px 10px',
+        cursor: 'pointer', letterSpacing: '0.04em',
+        marginBottom: -8,
+      }}
+      className="active:opacity-70 transition-opacity"
+    >
+      {dismissedIds.size} alert{dismissedIds.size === 1 ? '' : 's'} hidden · tap to restore
     </button>
   )
 }
