@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useCommunications } from '../hooks/useCommunications'
 import { useAppStore } from '../store/index'
-import { useSetRigStatus } from '../store/rigStatus'
+import { useSetSystemStatus } from '../store/systemStatus'
 
 const COMMS_FRESHNESS_MS = 45000
 
@@ -39,7 +39,7 @@ export function CommunicationsSection() {
     speedtestDown, speedtestUp, speedtestPing,
     refetch,
   } = useCommunications()
-  const setRigStatus = useSetRigStatus()
+  const setRigStatus = useSetSystemStatus()
 
   const age = lastUpdated ? Date.now() - lastUpdated.getTime() : Infinity
   const commsStatus =

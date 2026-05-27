@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useHomeAssistant } from '../hooks/useHomeAssistant'
 import { deriveChompTelemetry } from '../hooks/useChompTelemetry'
 import { IconThermometer, IconLightbulb, IconRadio, IconMoon, IconCpu } from './icons'
-import { useSetRigStatus } from '../store/rigStatus'
+import { useSetSystemStatus } from '../store/systemStatus'
 
 const HA_FRESHNESS_MS = 45000
 
@@ -11,7 +11,7 @@ export default function HomeAssistantCard() {
   const chomp = deriveChompTelemetry(ha)
   const [activeSection, setActiveSection] = useState('climate')
   const [sysOpen, setSysOpen] = useState(false)
-  const setRigStatus = useSetRigStatus()
+  const setRigStatus = useSetSystemStatus()
 
   const configured = !!ha.token && !!ha.HA_URL
   const age = ha.lastUpdated ? Date.now() - ha.lastUpdated.getTime() : Infinity

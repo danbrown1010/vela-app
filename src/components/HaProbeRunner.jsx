@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useHomeAssistant } from '../hooks/useHomeAssistant'
 import { useCommunications } from '../hooks/useCommunications'
-import { useSetRigStatus } from '../store/rigStatus'
+import { useSetSystemStatus } from '../store/systemStatus'
 
 // Must match the freshness constants in HomeAssistantCard and CommunicationsSection.
 const HA_FRESHNESS_MS = 45000
@@ -14,7 +14,7 @@ const COMMS_FRESHNESS_MS = 45000
 export function HaProbeRunner() {
   const ha = useHomeAssistant()
   const comms = useCommunications()
-  const setRigStatus = useSetRigStatus()
+  const setRigStatus = useSetSystemStatus()
 
   const configured = !!ha.token && !!ha.HA_URL
   const haAge = ha.lastUpdated ? Date.now() - ha.lastUpdated.getTime() : Infinity

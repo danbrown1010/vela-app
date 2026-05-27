@@ -11,7 +11,7 @@ import { EcoflowDeviceCard } from '../components/EcoflowDeviceCard'
 import { useEcoflowConfig } from '../hooks/useEcoflowConfig'
 import { useBatteries } from '../hooks/useBatteries'
 import { useEcoFlow } from '../hooks/useEcoFlow'
-import { useRigStatus, useSetRigStatus } from '../store/rigStatus'
+import { useSystemStatus, useSetSystemStatus } from '../store/systemStatus'
 import { useChompTelemetry } from '../hooks/useChompTelemetry'
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -48,7 +48,7 @@ function RigPageContent() {
     if (!integrations[key]) toggleIntegration(key)
     setActiveIntegration(key)
   }
-  const { power, comms, env } = useRigStatus()
+  const { power, comms, env } = useSystemStatus()
   const { accent, location, gpsStatus } = useAppStore()
 
   // ── Collapsing header ────────────────────────────────────────────────────────
@@ -294,7 +294,7 @@ const ECOFLOW_FRESHNESS_MS = 25000
 function EcoflowSection({ onShowInfo }) {
   const { user, accent } = useAppStore()
   const { featuredDevice, otherDevices, visibleDevices, loaded } = useEcoflowConfig(user?.id)
-  const setRigStatus = useSetRigStatus()
+  const setRigStatus = useSetSystemStatus()
 
   const [deviceStatuses, setDeviceStatuses] = useState({})
   const reportDeviceStatus = useCallback((sn, status) => {
